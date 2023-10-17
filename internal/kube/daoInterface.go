@@ -17,11 +17,11 @@ type KubeConfigDAOI interface {
 	GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error)
 	EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error)
 	DeleteKubeConfig(kubeConfigName string) error
-	GetAllConfigs() ([]*model.KubeConfig, error)
+	GetAllConfigs() ([]model.KubeConfig, error)
 }
 
 type NamespaceDAOI interface {
-	AddNamespaceToCubeConfig(cubeConfigName string, NamespaceName string) error
+	AddNamespaceToCubeConfig(kubeConfigName string, NamespaceName string) error
 	DeleteNamespaceFromKubeconfig(namespaceName string) error
 }
 

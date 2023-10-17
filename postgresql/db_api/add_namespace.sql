@@ -1,10 +1,8 @@
 CREATE OR REPLACE FUNCTION tools_api.add_namespace(p_name varchar, p_kc_name varchar)
-RETURNS tools.namespaces
+RETURNS void
 LANGUAGE plpgsql
 AS
 $$
-DECLARE
-    r_namespace tools.namespaces;
 BEGIN
     if coalesce(p_name, '') = '' then
         RAISE SQLSTATE '80001' USING message = 'empty namespace name provided';
@@ -17,9 +15,6 @@ BEGIN
     end if;
 
     INSERT INTO tools.namespaces(name, kc_name)
-    VALUES (p_name, p_kc_name)
-    RETURNING * INTO r_namespace;
-
-RETURN r_namespace;
+    VALUES (p_name, p_kc_name);
 END
 $$;
