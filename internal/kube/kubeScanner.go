@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"log/slog"
 	"regexp"
 	"scan_project/internal/model"
 	"strings"
@@ -23,12 +24,13 @@ type KubeScanner struct {
 	kubeConfigsDAO    ClusterDAOI
 	scansDAO          ScansDAOI
 	kubernetesTimeout *int
+	logger            *slog.Logger
 	stopChan          chan struct{}
 	startProcessWg    sync.WaitGroup
 	jobsRegexp        *regexp.Regexp
 }
 
-func NewKubeScanner(kubeConfigsDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTimeout *int) *KubeScanner {
+func NewKubeScanner(kubeConfigsDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTimeout *int, logger *slog.Logger) *KubeScanner {
 	// TODO: Проброс из кофига ключевого слова для грепа? error использовать как default?
 	return &KubeScanner{
 		kubeConfigsDAO:    kubeConfigsDAO,
@@ -36,6 +38,7 @@ func NewKubeScanner(kubeConfigsDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTi
 		kubernetesTimeout: KubernetesTimeout,
 		jobsRegexp:        regexp.MustCompile("(?i)error"),
 		startProcessWg:    sync.WaitGroup{},
+		logger:            logger,
 	}
 }
 
@@ -65,37 +68,55 @@ func (ks *KubeScanner) Start(intervalSec int, ctx context.Context) {
 func (ks *KubeScanner) Shutdown() {
 	ks.stopChan <- struct{}{}
 	ks.startProcessWg.Wait()
-	fmt.Println("Scanner successfully stopped") // TODO: log info
+	ks.logger.Info("Scanner successfully stopped")
 }
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI
 func (ks *KubeScanner) ScanAll() {
 	kubeConfigs, err := ks.kubeConfigsDAO.GetAllConfigs()
 	if err != nil {
-		fmt.Println("Failed to get configs from DB -- ", err) // TODO: log error
+		ks.logger.Error(
+			"Failed to get configs from DB",
+			slog.String("err", fmt.Sprintf("%v", err)),
+		)
 	}
 	for _, cfg := range kubeConfigs {
 		kubeConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(cfg.Config))
 		if err != nil {
-			fmt.Println("Failed to initialize kubernetes config from DB string -- ", err) // TODO: log error
+			ks.logger.Error(
+				"Failed to initialize kubernetes config from DB string",
+				slog.String("err", fmt.Sprintf("%v", err)),
+			)
 		}
 		kubeConfig.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
 		clientSet, err := kubernetes.NewForConfig(kubeConfig)
 		if err != nil {
-			fmt.Println("Failed to initialize kubernetes config client set -- ", err) // TODO: log error
+			ks.logger.Error(
+				"Failed to initialize kubernetes config client set",
+				slog.String("err", fmt.Sprintf("%v", err)),
+			)
 		}
 		for _, ns := range cfg.NameSpaces {
 			servicesScans, jobsScans, err := ks.ScanNamespace(clientSet, ns)
 			if err != nil {
-				fmt.Println("Failed to scan ", ns) // TODO: log error
+				ks.logger.Error(
+					fmt.Sprintf("Failed to scan %s", ns),
+					slog.String("err", fmt.Sprintf("%v", err)),
+				)
 			}
 			err = ks.scansDAO.UpdateJobsScans(cfg.Name, ns, jobsScans)
 			if err != nil {
-				fmt.Println("Failed to save Jobs scans") // TODO: log error
+				ks.logger.Error(
+					"Failed to save Jobs scans",
+					slog.String("err", fmt.Sprintf("%v", err)),
+				)
 			}
 			err = ks.scansDAO.UpdateServicesScans(cfg.Name, ns, servicesScans)
 			if err != nil {
-				fmt.Println("Failed to save Services scans") // TODO: log error
+				ks.logger.Error(
+					"Failed to save Services scans",
+					slog.String("err", fmt.Sprintf("%v", err)),
+				)
 			}
 		}
 	}
@@ -115,13 +136,19 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 		case v1.PodRunning:
 			serviceScan, err := ks.ScanServiceLog(kubeClient, &pod)
 			if err != nil {
-				fmt.Print("Error occured while getting pod logs -- ", pod.Name) // TODO: log error
+				ks.logger.Error(
+					"Error occured while getting pod logs",
+					slog.String("err", fmt.Sprintf("%v", err)),
+				)
 			}
 			servicesScans = append(servicesScans, *serviceScan)
 		case v1.PodFailed, v1.PodSucceeded:
 			jobScan, err := ks.ScanJobLog(kubeClient, &pod)
 			if err != nil {
-				fmt.Print("Error occured while getting pod logs -- ", pod.Name) // TODO: log error
+				ks.logger.Error(
+					"Error occured while getting pod logs",
+					slog.String("err", fmt.Sprintf("%v", err)),
+				)
 			}
 			jobsScans = append(jobsScans, *jobScan)
 		}
@@ -151,7 +178,9 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		case model.Trace, model.Debug, model.Info, model.Warning, model.Error, model.Fatal:
 			serviceScan.LogTypeCountMap[*log.Level] += 1
 		default:
-			fmt.Println("Unknown log level -- ", *log.Level) // TODO: log warning
+			ks.logger.Warn(
+				fmt.Sprintf("Unknown log level -- %s", *log.Level),
+			)
 		}
 		fmt.Println(*log.Level)
 	}
