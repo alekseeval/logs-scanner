@@ -102,7 +102,7 @@ func (ks *KubeScanner) ScanAll() {
 }
 
 // ScanNamespace return scans for jobs and services into specific Namespace for cluster
-func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace string) (servicesScans []*model.ServiceScan, jobsScans []*model.JobScan, err error) {
+func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace string) (servicesScans []model.ServiceScan, jobsScans []model.JobScan, err error) {
 	// Get all pods
 	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -117,13 +117,13 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 			if err != nil {
 				fmt.Print("Error occured while getting pod logs -- ", pod.Name) // TODO: log error
 			}
-			servicesScans = append(servicesScans, serviceScan)
+			servicesScans = append(servicesScans, *serviceScan)
 		case v1.PodFailed, v1.PodSucceeded:
 			jobScan, err := ks.ScanJobLog(kubeClient, &pod)
 			if err != nil {
 				fmt.Print("Error occured while getting pod logs -- ", pod.Name) // TODO: log error
 			}
-			jobsScans = append(jobsScans, jobScan)
+			jobsScans = append(jobsScans, *jobScan)
 		}
 	}
 	return servicesScans, jobsScans, nil

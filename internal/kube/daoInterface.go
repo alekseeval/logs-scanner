@@ -26,11 +26,11 @@ type NamespaceDAOI interface {
 }
 
 type JobsScanDAOI interface {
-	GetJobsScans(configName string, namespace string) []*model.JobScan
-	UpdateJobsScans(configName string, namespace string, jobsScans []*model.JobScan) error
+	GetJobsScans(configName string, namespace string) []model.JobScan
+	UpdateJobsScans(configName string, namespace string, jobsScans []model.JobScan) error
 }
 
 type ServicesScanDAOI interface {
-	GetServicesScans(configName string, namespace string) []*model.JobScan
-	UpdateServicesScans(configName string, namespace string, servicesScans []*model.ServiceScan) error
+	GetServicesScans(configName string, namespace string) []model.ServiceScan
+	UpdateServicesScans(configName string, namespace string, servicesScans []model.ServiceScan) error
 }
