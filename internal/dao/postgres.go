@@ -52,6 +52,9 @@ func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConf
 	return &kc, err
 }
 
+// EditKubeConfig change kubeconfig access string only
+//
+//	To change namespaces list where AddNamespaceToCubeConfig and DeleteNamespaceFromKubeconfig methods
 func (p *PostgresDB) EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
 	queryRow := `SELECT * FROM tools_api.edit_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
