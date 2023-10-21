@@ -39,22 +39,20 @@ func NewKubeScanner(kubeConfigsDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTi
 		jobsRegexp:        regexp.MustCompile("(?i)error"),
 		startProcessWg:    sync.WaitGroup{},
 		logger:            logger,
+		stopChan:          make(chan struct{}, 1),
 	}
 }
 
 // Start will do scan all kubernetes clusters gotten from ClusterDAOI every intervalSec seconds and save result in ScansDAOI
 //
 // The first scan will take place immediately
-func (ks *KubeScanner) Start(intervalSec int, ctx context.Context) {
+func (ks *KubeScanner) Start(intervalSec int) {
 	ks.startProcessWg.Add(1)
 	defer ks.startProcessWg.Done()
 	ks.ScanAll()
 	ticker := time.NewTicker(time.Duration(intervalSec) * time.Second)
 	for {
 		select {
-		case <-ctx.Done():
-			ticker.Stop()
-			return
 		case <-ks.stopChan:
 			ticker.Stop()
 			return
@@ -67,8 +65,9 @@ func (ks *KubeScanner) Start(intervalSec int, ctx context.Context) {
 
 func (ks *KubeScanner) Shutdown() {
 	ks.stopChan <- struct{}{}
+	ks.logger.Info("Stopping KubeScanner")
 	ks.startProcessWg.Wait()
-	ks.logger.Info("Scanner successfully stopped")
+	ks.logger.Info("KubeScanner successfully stopped")
 }
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI
@@ -149,6 +148,10 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 }
 
 func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.Pod) (serviceScan *model.ServiceScan, err error) {
+	serviceScan = &model.ServiceScan{
+		ServiceName:     pod.Name,
+		LogTypeCountMap: make(map[model.LogLevelType]int),
+	}
 	serviceScan.ServiceName = pod.Name
 	serviceScan.RestartsCount = 0                              // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
 	serviceScan.Uptime = pod.CreationTimestamp.Sub(time.Now()) // TODO: is that correct?
@@ -166,13 +169,16 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		if err != nil {
 			serviceScan.NoneJsonLinesCount++
 		}
+		if log.Level == nil {
+			//ks.logger.Error("Log hasn't level field")
+			continue
+		}
 		switch *log.Level {
 		case model.Trace, model.Debug, model.Info, model.Warning, model.Error, model.Fatal:
 			serviceScan.LogTypeCountMap[*log.Level] += 1
 		default:
 			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", *log.Level))
 		}
-		fmt.Println(*log.Level)
 	}
 	return serviceScan, nil
 }

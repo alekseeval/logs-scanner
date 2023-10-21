@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"scan_project/configuration"
@@ -13,6 +14,20 @@ import (
 type PostgresDB struct {
 	db     *sqlx.DB
 	logger *logrus.Entry
+}
+
+type kubeConfigView struct {
+	Config     string         `db:"config_str"`
+	Name       string         `db:"name"`
+	NameSpaces pq.StringArray `db:"namespaces"`
+}
+
+func (kcv *kubeConfigView) convertToKubeConfig() *model.KubeConfig {
+	return &model.KubeConfig{
+		Config:     kcv.Config,
+		Name:       kcv.Name,
+		NameSpaces: kcv.NameSpaces,
+	}
 }
 
 // NewPostgresDB initialize PostgresDB struct
@@ -36,20 +51,20 @@ func (p *PostgresDB) AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeCon
 	queryRow := `SELECT * FROM tools_api.create_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kc model.KubeConfig
-	err := row.StructScan(&kc)
+	var kcv kubeConfigView
+	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return &kc, err
+	return kcv.convertToKubeConfig(), err
 }
 
 func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error) {
 	queryRow := `SELECT * FROM tools_api.get_kubeconfig_by_name($1)`
 	queryParams := []interface{}{kubeConfigName}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kc model.KubeConfig
-	err := row.StructScan(&kc)
+	var kcv kubeConfigView
+	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return &kc, err
+	return kcv.convertToKubeConfig(), err
 }
 
 // EditKubeConfig change kubeconfig access string only
@@ -59,10 +74,10 @@ func (p *PostgresDB) EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeCo
 	queryRow := `SELECT * FROM tools_api.edit_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kc model.KubeConfig
-	err := row.StructScan(&kc)
+	var kcv kubeConfigView
+	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return &kc, err
+	return kcv.convertToKubeConfig(), err
 }
 
 func (p *PostgresDB) DeleteKubeConfig(kubeConfigName string) error {
@@ -77,15 +92,15 @@ func (p *PostgresDB) GetAllConfigs() ([]model.KubeConfig, error) {
 	queryRow := `SELECT * FROM tools_api.get_kubeconfigs()`
 	rows, err := p.db.Queryx(queryRow)
 	allConfigs := make([]model.KubeConfig, 0)
+	p.logDBRequest(queryRow, nil)
 	for rows.Next() {
-		var ck model.KubeConfig
-		err = rows.StructScan(&ck)
+		var kcv kubeConfigView
+		err = rows.StructScan(&kcv)
 		if err != nil {
 			return nil, err
 		}
-		allConfigs = append(allConfigs, ck)
+		allConfigs = append(allConfigs, *kcv.convertToKubeConfig())
 	}
-	p.logDBRequest(queryRow, nil)
 	return allConfigs, err
 }
 
@@ -108,7 +123,7 @@ func (p *PostgresDB) DeleteNamespaceFromKubeconfig(namespaceName string) error {
 // logDBRequest write to log information about request. Method uses slog entry from PostgresDB struct
 func (p *PostgresDB) logDBRequest(queryRow string, queryParams interface{}) {
 	p.logger.WithFields(logrus.Fields{
-		"params": fmt.Sprintf("%v", queryParams),
+		"params": queryParams,
 		"query":  queryRow,
 	}).Info("db query")
 }

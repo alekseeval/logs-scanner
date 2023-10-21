@@ -7,6 +7,13 @@ type ScansDao struct {
 	servicesScans map[daoKey][]model.ServiceScan
 }
 
+func NewScansDao() ScansDao {
+	return ScansDao{
+		jobsScans:     make(map[daoKey][]model.JobScan),
+		servicesScans: make(map[daoKey][]model.ServiceScan),
+	}
+}
+
 type daoKey struct {
 	kubeconfigName string
 	namespace      string

@@ -20,7 +20,7 @@ type Config struct {
 			Timeout  int    `mapstructure:"timeout"`
 		}
 		Kubernetes struct {
-			Timeout int `mapstructure:"timeout"`
+			Timeout *int `mapstructure:"timeout"`
 		}
 	} `mapstructure:"system"`
 	Logger struct {
