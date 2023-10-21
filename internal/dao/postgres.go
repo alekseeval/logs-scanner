@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"log/slog"
+	"github.com/sirupsen/logrus"
 	"scan_project/configuration"
 	"scan_project/internal/model"
 )
@@ -12,13 +12,13 @@ import (
 // PostgresDB is struct which implements kube.ClusterDAOI interface and provides access to PostgresSQL DB
 type PostgresDB struct {
 	db     *sqlx.DB
-	logger *slog.Logger
+	logger *logrus.Entry
 }
 
 // NewPostgresDB initialize PostgresDB struct
 //
 //	Error can be occurred by initial ping to db
-func NewPostgresDB(config *configuration.Config, logger *slog.Logger) (*PostgresDB, error) {
+func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*PostgresDB, error) {
 	dbConfig := config.System.Postgres
 	connStr := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s connect_timeout=%d",
 		dbConfig.User, dbConfig.Password, dbConfig.Ip, dbConfig.Port, dbConfig.DbName, dbConfig.Timeout)
@@ -107,9 +107,8 @@ func (p *PostgresDB) DeleteNamespaceFromKubeconfig(namespaceName string) error {
 
 // logDBRequest write to log information about request. Method uses slog entry from PostgresDB struct
 func (p *PostgresDB) logDBRequest(queryRow string, queryParams interface{}) {
-	p.logger.Info(
-		"db query",
-		slog.String("params", fmt.Sprintf("%v", queryParams)),
-		slog.String("query", queryRow),
-	)
+	p.logger.WithFields(logrus.Fields{
+		"params": fmt.Sprintf("%v", queryParams),
+		"query":  queryRow,
+	}).Info("db query")
 }
