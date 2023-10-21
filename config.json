@@ -1,0 +1,24 @@
+{
+  "system": {
+    "http": {
+      "port": 50000,
+      "timeout": 5
+    },
+    "postgres": {
+      "ip": "192.168.9.235",
+      "port": 5432,
+      "db_name": "tool_db",
+      "user": "scanadmin",
+      "password": "scanadmin",
+      "timeout": 5
+    },
+    "kubernetes": {
+      "timeout": 10
+    }
+  },
+  "logger": {
+    "level": "trace"
+  },
+  "scan_delay": 30,
+  "jobs_grep_pattern": "error"
+}
