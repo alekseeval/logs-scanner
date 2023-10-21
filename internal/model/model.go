@@ -28,6 +28,7 @@ type ServiceScan struct {
 	RestartsCount      int
 	LogTypeCountMap    map[LogLevelType]int
 	NoneJsonLinesCount int
+	TotalLines         int
 }
 
 type JobScan struct {
@@ -39,5 +40,5 @@ type JobScan struct {
 }
 
 type CommonServiceLog struct {
-	Level *LogLevelType `json:"level"`
+	Level LogLevelType `json:"level"`
 }

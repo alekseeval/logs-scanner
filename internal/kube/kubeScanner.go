@@ -163,23 +163,23 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 	}
 	defer podLogsStream.Close() // TODO: нужно ли закрывать???
 	scanner := bufio.NewScanner(podLogsStream)
+	linesCount := 0
 	for scanner.Scan() {
+		linesCount++
 		log := &model.CommonServiceLog{}
 		err := json.Unmarshal(scanner.Bytes(), log)
 		if err != nil {
 			serviceScan.NoneJsonLinesCount++
-		}
-		if log.Level == nil {
-			//ks.logger.Error("Log hasn't level field")
 			continue
 		}
-		switch *log.Level {
+		switch log.Level {
 		case model.Trace, model.Debug, model.Info, model.Warning, model.Error, model.Fatal:
-			serviceScan.LogTypeCountMap[*log.Level] += 1
+			serviceScan.LogTypeCountMap[log.Level] += 1
 		default:
-			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", *log.Level))
+			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", log.Level))
 		}
 	}
+	serviceScan.TotalLines = linesCount
 	return serviceScan, nil
 }
 
