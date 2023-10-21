@@ -8,26 +8,26 @@ import (
 type Config struct {
 	System struct {
 		Http struct {
-			Port    int
-			Timeout int
-		}
+			Port    int `mapstructure:"port"`
+			Timeout int `mapstructure:"timeout"`
+		} `mapstructure:"http"`
 		Postgres struct {
-			Ip       string
-			Port     int
-			DbName   string
-			User     string
-			Password string
-			Timeout  int
+			Ip       string `mapstructure:"ip"`
+			Port     int    `mapstructure:"port"`
+			DbName   string `mapstructure:"db_name"`
+			User     string `mapstructure:"user"`
+			Password string `mapstructure:"password"`
+			Timeout  int    `mapstructure:"timeout"`
 		}
 		Kubernetes struct {
-			Timeout int
+			Timeout int `mapstructure:"timeout"`
 		}
-	}
+	} `mapstructure:"system"`
 	Logger struct {
-		LogLevel string
-	}
-	ScanDelay      int
-	JobGrepPattern string
+		Level string `mapstructure:"level"`
+	} `mapstructure:"logger"`
+	ScanDelay       int    `mapstructure:"scan_delay"`
+	JobsGrepPattern string `mapstructure:"jobs_grep_pattern"`
 }
 
 func ReadConfig(path string) (config *Config, err error) {
