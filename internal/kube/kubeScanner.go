@@ -149,15 +149,15 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		LogTypeCountMap: make(map[model.LogLevelType]int),
 	}
 	serviceScan.ServiceName = pod.Name
-	serviceScan.RestartsCount = 0                                   // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
-	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time) // TODO: is that correct?
+	serviceScan.RestartsCount = 0 // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
+	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time)
 	podLogOpts := &v1.PodLogOptions{}
 	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
 	podLogsStream, err := req.Stream(context.TODO())
 	if err != nil {
 		return nil, err
 	}
-	defer podLogsStream.Close() // TODO: нужно ли закрывать???
+	defer podLogsStream.Close()
 	scanner := bufio.NewScanner(podLogsStream)
 	linesCount := 0
 	for scanner.Scan() {
@@ -187,7 +187,7 @@ func (ks *KubeScanner) ScanJobLog(kubeClient *kubernetes.Clientset, pod *v1.Pod)
 	if err != nil {
 		return nil, err
 	}
-	defer podLogsStream.Close() // TODO: нужно ли закрывать???
+	defer podLogsStream.Close()
 	var sb strings.Builder
 	matchedLogRows := make([]string, 0)
 	scanner := bufio.NewScanner(podLogsStream)
@@ -201,7 +201,7 @@ func (ks *KubeScanner) ScanJobLog(kubeClient *kubernetes.Clientset, pod *v1.Pod)
 	}
 	return &model.JobScan{
 		JobName:        pod.Name,
-		Age:            time.Now().Sub(pod.CreationTimestamp.Time), // TODO: is that correct?
+		Age:            time.Now().Sub(pod.CreationTimestamp.Time),
 		FullLog:        sb.String(),
 		GrepPattern:    *ks.jobsRegexp,
 		GrepLog:        matchedLogRows,

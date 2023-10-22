@@ -16,7 +16,6 @@ const (
 	DefaultLogLevel = logrus.InfoLevel
 )
 
-// TODO: Запустить сканнер и посмотреть что будет, все ошибки вроде как залогированы должны быть
 func main() {
 
 	logger := logrus.New()
