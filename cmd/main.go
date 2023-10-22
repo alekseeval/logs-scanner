@@ -43,7 +43,7 @@ func main() {
 			WithField("error", err).
 			Error("Failed to init postgres DB")
 	}
-	scansDao := dao.NewScansDao()
+	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scansDAO"))
 
 	// Start KubeScanner
 	kubeScanner := kube.NewKubeScanner(

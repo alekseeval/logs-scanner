@@ -1,16 +1,21 @@
 package dao
 
-import "scan_project/internal/model"
+import (
+	"github.com/sirupsen/logrus"
+	"scan_project/internal/model"
+)
 
 type ScansDao struct {
 	jobsScans     map[daoKey][]model.JobScan
 	servicesScans map[daoKey][]model.ServiceScan
+	logger        *logrus.Entry
 }
 
-func NewScansDao() ScansDao {
+func NewScansDao(logger *logrus.Entry) ScansDao {
 	return ScansDao{
 		jobsScans:     make(map[daoKey][]model.JobScan),
 		servicesScans: make(map[daoKey][]model.ServiceScan),
+		logger:        logger,
 	}
 }
 
