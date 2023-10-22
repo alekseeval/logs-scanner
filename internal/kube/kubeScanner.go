@@ -1,8 +1,5 @@
 package kube
 
-// TODO:
-//		- Распараллеливание скана подов? Инициализировать WG внтури скана неймспейса и параллелить скан джоб и сервисов
-
 import (
 	"bufio"
 	"context"
@@ -97,7 +94,7 @@ func (ks *KubeScanner) ScanAll() {
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
-					Error(fmt.Sprintf("Failed to scan %s", ns))
+					Error(fmt.Sprintf("Failed to scan namespace %s", ns))
 			}
 			err = ks.scansDAO.UpdateJobsScans(cfg.Name, ns, jobsScans)
 			if err != nil {
@@ -120,7 +117,6 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 	// Get all pods
 	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		// TODO: вывод в лог ??? Или ловить уже выше и там выводить ошибку?
 		return nil, nil, err
 	}
 	for _, pod := range pods.Items {
@@ -153,8 +149,8 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		LogTypeCountMap: make(map[model.LogLevelType]int),
 	}
 	serviceScan.ServiceName = pod.Name
-	serviceScan.RestartsCount = 0                              // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
-	serviceScan.Uptime = pod.CreationTimestamp.Sub(time.Now()) // TODO: is that correct?
+	serviceScan.RestartsCount = 0                                   // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
+	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time) // TODO: is that correct?
 	podLogOpts := &v1.PodLogOptions{}
 	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
 	podLogsStream, err := req.Stream(context.TODO())
@@ -180,6 +176,7 @@ func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		}
 	}
 	serviceScan.TotalLines = linesCount
+	serviceScan.ScanFinishTime = time.Now()
 	return serviceScan, nil
 }
 
@@ -203,10 +200,11 @@ func (ks *KubeScanner) ScanJobLog(kubeClient *kubernetes.Clientset, pod *v1.Pod)
 		sb.WriteRune('\n')
 	}
 	return &model.JobScan{
-		JobName:     pod.Name,
-		Age:         pod.CreationTimestamp.Sub(time.Now()), // TODO: is that correct?
-		FullLog:     sb.String(),
-		GrepPattern: *ks.jobsRegexp,
-		GrepLog:     matchedLogRows,
+		JobName:        pod.Name,
+		Age:            time.Now().Sub(pod.CreationTimestamp.Time), // TODO: is that correct?
+		FullLog:        sb.String(),
+		GrepPattern:    *ks.jobsRegexp,
+		GrepLog:        matchedLogRows,
+		ScanFinishTime: time.Now(),
 	}, nil
 }

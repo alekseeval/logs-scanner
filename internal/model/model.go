@@ -29,14 +29,16 @@ type ServiceScan struct {
 	LogTypeCountMap    map[LogLevelType]int
 	NoneJsonLinesCount int
 	TotalLines         int
+	ScanFinishTime     time.Time
 }
 
 type JobScan struct {
-	JobName     string
-	Age         time.Duration
-	FullLog     string
-	GrepPattern regexp.Regexp
-	GrepLog     []string
+	JobName        string
+	Age            time.Duration
+	FullLog        string
+	GrepPattern    regexp.Regexp
+	GrepLog        []string
+	ScanFinishTime time.Time
 }
 
 type CommonServiceLog struct {
