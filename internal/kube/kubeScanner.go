@@ -18,7 +18,7 @@ import (
 )
 
 type KubeScanner struct {
-	kubeConfigsDAO    ClusterDAOI
+	clustersDAO       ClusterDAOI
 	scansDAO          ScansDAOI
 	kubernetesTimeout *int
 	logger            *logrus.Entry
@@ -27,10 +27,10 @@ type KubeScanner struct {
 	jobsRegexp        *regexp.Regexp
 }
 
-func NewKubeScanner(kubeConfigsDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
+func NewKubeScanner(clustersDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
 	// TODO: Проброс из кофига ключевого слова для грепа? error использовать как default?
 	return &KubeScanner{
-		kubeConfigsDAO:    kubeConfigsDAO,
+		clustersDAO:       clustersDAO,
 		scansDAO:          scansDAO,
 		kubernetesTimeout: KubernetesTimeout,
 		jobsRegexp:        regexp.MustCompile("(?i)error"),
@@ -69,7 +69,7 @@ func (ks *KubeScanner) Shutdown() {
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI
 func (ks *KubeScanner) ScanAll() {
-	kubeConfigs, err := ks.kubeConfigsDAO.GetAllConfigs()
+	kubeConfigs, err := ks.clustersDAO.GetAllConfigs()
 	if err != nil {
 		ks.logger.
 			WithField("error", err).

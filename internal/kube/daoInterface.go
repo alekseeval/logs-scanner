@@ -3,16 +3,16 @@ package kube
 import "scan_project/internal/model"
 
 type ClusterDAOI interface {
-	KubeConfigDAOI
-	NamespaceDAOI
+	kubeConfigDAOI
+	namespaceDAOI
 }
 
 type ScansDAOI interface {
-	JobsScanDAOI
-	ServicesScanDAOI
+	jobsScanDAOI
+	servicesScanDAOI
 }
 
-type KubeConfigDAOI interface {
+type kubeConfigDAOI interface {
 	AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error)
 	GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error)
 	EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error)
@@ -20,17 +20,17 @@ type KubeConfigDAOI interface {
 	GetAllConfigs() ([]model.KubeConfig, error)
 }
 
-type NamespaceDAOI interface {
+type namespaceDAOI interface {
 	AddNamespaceToCubeConfig(kubeConfigName string, NamespaceName string) error
 	DeleteNamespaceFromKubeconfig(namespaceName string) error
 }
 
-type JobsScanDAOI interface {
+type jobsScanDAOI interface {
 	GetJobsScans(configName string, namespace string) []model.JobScan
 	UpdateJobsScans(configName string, namespace string, jobsScans []model.JobScan) error
 }
 
-type ServicesScanDAOI interface {
+type servicesScanDAOI interface {
 	GetServicesScans(configName string, namespace string) []model.ServiceScan
 	UpdateServicesScans(configName string, namespace string, servicesScans []model.ServiceScan) error
 }
