@@ -90,12 +90,15 @@ func (ks *KubeScanner) ScanAll() {
 				Error("Failed to initialize kubernetes config client set")
 		}
 		for _, ns := range cfg.NameSpaces {
+			ks.logger.Debugf("Start scan namespace %s from cluster %s", ns, cfg.Name)
 			servicesScans, jobsScans, err := ks.ScanNamespace(clientSet, ns)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
 					Error(fmt.Sprintf("Failed to scan namespace %s", ns))
+				continue
 			}
+			ks.logger.Debugf("Namespace %s from cluster %s was successfully scanned", ns, cfg.Name)
 			err = ks.scansDAO.UpdateJobsScans(cfg.Name, ns, jobsScans)
 			if err != nil {
 				ks.logger.
@@ -115,6 +118,7 @@ func (ks *KubeScanner) ScanAll() {
 // ScanNamespace return scans for jobs and services into specific Namespace for cluster
 func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace string) (servicesScans []model.ServiceScan, jobsScans []model.JobScan, err error) {
 	// Get all pods
+
 	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
