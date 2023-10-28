@@ -2,6 +2,11 @@ package kube
 
 import "scan_project/internal/model"
 
+type StorageDAO interface {
+	ClusterDAOI
+	ScansDAOI
+}
+
 type ClusterDAOI interface {
 	kubeConfigDAOI
 	namespaceDAOI
