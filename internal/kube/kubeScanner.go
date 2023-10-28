@@ -89,7 +89,7 @@ func (ks *KubeScanner) ScanAll() {
 				WithField("error", err).
 				Error("Failed to initialize kubernetes config client set")
 		}
-		for _, ns := range cfg.NameSpaces {
+		for _, ns := range cfg.Namespaces {
 			ks.logger.Debugf("Start scan namespace %s from cluster %s", ns, cfg.Name)
 			servicesScans, jobsScans, err := ks.ScanNamespace(clientSet, ns)
 			if err != nil {

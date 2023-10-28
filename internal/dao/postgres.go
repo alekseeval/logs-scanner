@@ -26,7 +26,7 @@ func (kcv *kubeConfigView) convertToKubeConfig() *model.KubeConfig {
 	return &model.KubeConfig{
 		Config:     kcv.Config,
 		Name:       kcv.Name,
-		NameSpaces: kcv.NameSpaces,
+		Namespaces: kcv.NameSpaces,
 	}
 }
 
@@ -44,9 +44,9 @@ func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*Postgre
 	}, err
 }
 
-// AddKubeConfig saves model.KubeConfig, except NameSpaces field
+// AddKubeConfig saves model.KubeConfig, except Namespaces field
 //
-//	To save NameSpaces should be used PostgresDB.AddNamespaceToCubeConfig method
+//	To save Namespaces should be used PostgresDB.AddNamespaceToCubeConfig method
 func (p *PostgresDB) AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
 	queryRow := `SELECT * FROM tools_api.create_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
