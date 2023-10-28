@@ -26,7 +26,7 @@ func (s *HttpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	jobsScans := s.scansDAO.GetJobsScans(clusterName, namespace)
+	jobsScans := s.storage.GetJobsScans(clusterName, namespace)
 	err := json.NewEncoder(w).Encode(jobsScans)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -52,7 +52,7 @@ func (s *HttpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	servicesScans := s.scansDAO.GetServicesScans(clusterName, namespace)
+	servicesScans := s.storage.GetServicesScans(clusterName, namespace)
 	err := json.NewEncoder(w).Encode(servicesScans)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

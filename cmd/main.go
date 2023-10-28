@@ -48,11 +48,11 @@ func main() {
 		return
 	}
 	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scansDAO"))
+	storage := dao.NewStorage(postgresDB, &scansDao)
 
 	// Start KubeScanner
 	kubeScanner := kube.NewKubeScanner(
-		postgresDB,
-		&scansDao,
+		storage,
 		config.System.Kubernetes.Timeout,
 		logrus.NewEntry(logger).WithField("app", "KubeScanner"),
 	)
@@ -60,7 +60,7 @@ func main() {
 	defer kubeScanner.Shutdown()
 
 	// Start http.server
-	server := http.NewHttpServer(postgresDB, &scansDao, logger.WithField("app", "http-server"), config)
+	server := http.NewHttpServer(storage, logger.WithField("app", "http-server"), config)
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {

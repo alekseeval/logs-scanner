@@ -18,8 +18,7 @@ import (
 )
 
 type KubeScanner struct {
-	clustersDAO       ClusterDAOI
-	scansDAO          ScansDAOI
+	storage           StorageI
 	kubernetesTimeout *int
 	logger            *logrus.Entry
 	stopChan          chan struct{}
@@ -27,11 +26,10 @@ type KubeScanner struct {
 	jobsRegexp        *regexp.Regexp
 }
 
-func NewKubeScanner(clustersDAO ClusterDAOI, scansDAO ScansDAOI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
+func NewKubeScanner(storage StorageI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
 	// TODO: Проброс из кофига ключевого слова для грепа? error использовать как default?
 	return &KubeScanner{
-		clustersDAO:       clustersDAO,
-		scansDAO:          scansDAO,
+		storage:           storage,
 		kubernetesTimeout: KubernetesTimeout,
 		jobsRegexp:        regexp.MustCompile("(?i)error"),
 		startProcessWg:    sync.WaitGroup{},
@@ -69,7 +67,7 @@ func (ks *KubeScanner) Shutdown() {
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI
 func (ks *KubeScanner) ScanAll() {
-	kubeConfigs, err := ks.clustersDAO.GetAllConfigs()
+	kubeConfigs, err := ks.storage.GetAllConfigs()
 	if err != nil {
 		ks.logger.
 			WithField("error", err).
@@ -99,13 +97,13 @@ func (ks *KubeScanner) ScanAll() {
 				continue
 			}
 			ks.logger.Debugf("Namespace %s from cluster %s was successfully scanned", ns, cfg.Name)
-			err = ks.scansDAO.UpdateJobsScans(cfg.Name, ns, jobsScans)
+			err = ks.storage.UpdateJobsScans(cfg.Name, ns, jobsScans)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
 					Error("Failed to save Jobs scans")
 			}
-			err = ks.scansDAO.UpdateServicesScans(cfg.Name, ns, servicesScans)
+			err = ks.storage.UpdateServicesScans(cfg.Name, ns, servicesScans)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).

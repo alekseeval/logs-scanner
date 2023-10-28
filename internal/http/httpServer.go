@@ -15,16 +15,14 @@ import (
 // TODO: дописать хендлеры на остальные запросы
 
 type HttpServer struct {
-	logger      *logrus.Entry
-	clustersDAO kube.ClusterDAOI
-	scansDAO    kube.ScansDAOI
+	logger  *logrus.Entry
+	storage kube.StorageI
 }
 
-func NewHttpServer(clusterDAO kube.ClusterDAOI, scansDAO kube.ScansDAOI, loggerEntry *logrus.Entry, cfg *configuration.Config) *http.Server {
+func NewHttpServer(storage kube.StorageI, loggerEntry *logrus.Entry, cfg *configuration.Config) *http.Server {
 	httpServer := HttpServer{
-		logger:      loggerEntry,
-		clustersDAO: clusterDAO,
-		scansDAO:    scansDAO,
+		logger:  loggerEntry,
+		storage: storage,
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/cluster/{cluster}/namespace/{namespace}/jobs-scans", httpServer.getJobsScans).Methods("GET")
