@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	http2 "net/http"
 	"os"
 	"os/signal"
 	"scan_project/configuration"
 	"scan_project/internal/dao"
+	"scan_project/internal/http"
 	"scan_project/internal/kube"
 	"syscall"
+	"time"
 )
 
 const (
@@ -41,6 +45,7 @@ func main() {
 		logger.
 			WithField("error", err).
 			Error("Failed to init postgres DB")
+		return
 	}
 	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scansDAO"))
 
@@ -53,6 +58,27 @@ func main() {
 	)
 	go kubeScanner.Start(config.ScanDelay)
 	defer kubeScanner.Shutdown()
+
+	// Start http.server
+	server := http.NewHttpServer(postgresDB, &scansDao, logger.WithField("app", "http-server"), config)
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("Failed to start the HTTP Server")
+		}
+	}()
+	defer func(server *http2.Server) {
+		ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer ctxCancel()
+		err := server.Shutdown(ctx)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("Failed to shutdown the HTTP Server gracefully")
+		}
+	}(server)
 
 	exitChl := make(chan os.Signal, 1)
 	signal.Notify(exitChl, syscall.SIGINT, syscall.SIGTERM)

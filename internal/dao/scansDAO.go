@@ -25,10 +25,15 @@ type daoKey struct {
 }
 
 func (sd *ScansDao) GetJobsScans(configName string, namespace string) []model.JobScan {
-	return sd.jobsScans[daoKey{
+	scans := sd.jobsScans[daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
 	}]
+	if scans != nil {
+		return scans
+	} else {
+		return make([]model.JobScan, 0)
+	}
 }
 
 func (sd *ScansDao) UpdateJobsScans(configName string, namespace string, jobsScans []model.JobScan) error {
@@ -41,10 +46,15 @@ func (sd *ScansDao) UpdateJobsScans(configName string, namespace string, jobsSca
 }
 
 func (sd *ScansDao) GetServicesScans(configName string, namespace string) []model.ServiceScan {
-	return sd.servicesScans[daoKey{
+	scans := sd.servicesScans[daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
 	}]
+	if scans != nil {
+		return scans
+	} else {
+		return make([]model.ServiceScan, 0)
+	}
 }
 
 func (sd *ScansDao) UpdateServicesScans(configName string, namespace string, servicesScans []model.ServiceScan) error {
