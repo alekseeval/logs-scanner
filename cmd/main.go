@@ -47,14 +47,14 @@ func main() {
 			Error("Failed to init postgres DB")
 		return
 	}
-	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scansDAO"))
+	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scans-in-memory"))
 	storage := dao.NewStorage(postgresDB, &scansDao)
 
 	// Start KubeScanner
 	kubeScanner := kube.NewKubeScanner(
 		storage,
 		config.System.Kubernetes.Timeout,
-		logrus.NewEntry(logger).WithField("app", "KubeScanner"),
+		logrus.NewEntry(logger).WithField("app", "kube-scanner"),
 	)
 	go kubeScanner.Start(config.ScanDelay)
 	defer kubeScanner.Shutdown()

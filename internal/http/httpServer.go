@@ -25,6 +25,7 @@ func NewHttpServer(storage kube.StorageI, loggerEntry *logrus.Entry, cfg *config
 		storage: storage,
 	}
 	r := mux.NewRouter()
+	r.Use(httpServer.loggingMiddleware)
 	r.HandleFunc("/cluster/{cluster}/namespace/{namespace}/jobs-scans", httpServer.getJobsScans).Methods("GET")
 	r.HandleFunc("/cluster/{cluster}/namespace/{namespace}/services-scans", httpServer.getServicesScans).Methods("GET")
 	return &http.Server{
