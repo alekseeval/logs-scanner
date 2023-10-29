@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION tools_api.delete_kubeconfig(p_name varchar)
+CREATE OR REPLACE FUNCTION kube_api.delete_kubeconfig(p_name varchar)
 RETURNS void
 LANGUAGE plpgsql
 AS
@@ -10,7 +10,7 @@ BEGIN
         RAISE SQLSTATE '80010' USING message = 'empty kubeconfig name provided';
     end if;
 
-    DELETE FROM tools.kubeconfigs
+    DELETE FROM kube.kubeconfigs
     WHERE name=p_name
     RETURNING id INTO r_kubeconfig_id;
 

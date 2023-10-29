@@ -48,7 +48,7 @@ func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*Postgre
 //
 //	To save Namespaces should be used PostgresDB.AddNamespaceToCubeConfig method
 func (p *PostgresDB) AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
-	queryRow := `SELECT * FROM tools_api.create_kubeconfig($1, $2)`
+	queryRow := `SELECT * FROM create_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv kubeConfigView
@@ -58,7 +58,7 @@ func (p *PostgresDB) AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeCon
 }
 
 func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error) {
-	queryRow := `SELECT * FROM tools_api.get_kubeconfig_by_name($1)`
+	queryRow := `SELECT * FROM get_kubeconfig_by_name($1)`
 	queryParams := []interface{}{kubeConfigName}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv kubeConfigView
@@ -71,7 +71,7 @@ func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConf
 //
 //	To change namespaces list where AddNamespaceToCubeConfig and DeleteNamespaceFromKubeconfig methods
 func (p *PostgresDB) EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
-	queryRow := `SELECT * FROM tools_api.edit_kubeconfig($1, $2)`
+	queryRow := `SELECT * FROM edit_kubeconfig($1, $2)`
 	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv kubeConfigView
@@ -81,7 +81,7 @@ func (p *PostgresDB) EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeCo
 }
 
 func (p *PostgresDB) DeleteKubeConfig(kubeConfigName string) error {
-	queryRow := `SELECT * FROM tools_api.delete_kubeconfig($1)`
+	queryRow := `SELECT * FROM delete_kubeconfig($1)`
 	queryParams := []interface{}{kubeConfigName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
@@ -89,8 +89,11 @@ func (p *PostgresDB) DeleteKubeConfig(kubeConfigName string) error {
 }
 
 func (p *PostgresDB) GetAllConfigs() ([]model.KubeConfig, error) {
-	queryRow := `SELECT * FROM tools_api.get_kubeconfigs()`
+	queryRow := `SELECT * FROM get_kubeconfigs()`
 	rows, err := p.db.Queryx(queryRow)
+	if err != nil {
+		return nil, err
+	}
 	allConfigs := make([]model.KubeConfig, 0)
 	p.logDBRequest(queryRow, nil)
 	for rows.Next() {
@@ -105,7 +108,7 @@ func (p *PostgresDB) GetAllConfigs() ([]model.KubeConfig, error) {
 }
 
 func (p *PostgresDB) AddNamespaceToCubeConfig(kubeConfigName string, namespaceName string) error {
-	queryRow := `SELECT * FROM tools_api.add_namespace($1, $2)`
+	queryRow := `SELECT * FROM add_namespace($1, $2)`
 	queryParams := []interface{}{namespaceName, kubeConfigName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
@@ -113,7 +116,7 @@ func (p *PostgresDB) AddNamespaceToCubeConfig(kubeConfigName string, namespaceNa
 }
 
 func (p *PostgresDB) DeleteNamespaceFromKubeconfig(namespaceName string) error {
-	queryRow := `SELECT * FROM tools_api.delete_namespace($1, $2)`
+	queryRow := `SELECT * FROM delete_namespace($1, $2)`
 	queryParams := []interface{}{namespaceName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
