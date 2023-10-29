@@ -63,7 +63,7 @@ func main() {
 	server := http.NewHttpServer(storage, logger.WithField("app", "http-server"), config)
 	go func() {
 		err := server.ListenAndServe()
-		if err != nil {
+		if err != http2.ErrServerClosed && err != nil {
 			logger.
 				WithField("error", err).
 				Error("Failed to start the HTTP Server")
