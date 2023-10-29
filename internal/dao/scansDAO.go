@@ -25,6 +25,9 @@ type daoKey struct {
 }
 
 func (sd *ScansDao) GetJobsScans(configName string, namespace string) []model.JobScan {
+	sd.logger.
+		WithField("params", []string{configName, namespace}).
+		Debug("Get jobs scans")
 	scans := sd.jobsScans[daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
@@ -37,6 +40,10 @@ func (sd *ScansDao) GetJobsScans(configName string, namespace string) []model.Jo
 }
 
 func (sd *ScansDao) UpdateJobsScans(configName string, namespace string, jobsScans []model.JobScan) error {
+	sd.logger.
+		WithField("params", []string{configName, namespace}).
+		WithField("rows", len(jobsScans)).
+		Debug("Update jobs scans")
 	key := daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
@@ -46,6 +53,9 @@ func (sd *ScansDao) UpdateJobsScans(configName string, namespace string, jobsSca
 }
 
 func (sd *ScansDao) GetServicesScans(configName string, namespace string) []model.ServiceScan {
+	sd.logger.
+		WithField("params", []string{configName, namespace}).
+		Debug("Get services scans")
 	scans := sd.servicesScans[daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
@@ -58,6 +68,10 @@ func (sd *ScansDao) GetServicesScans(configName string, namespace string) []mode
 }
 
 func (sd *ScansDao) UpdateServicesScans(configName string, namespace string, servicesScans []model.ServiceScan) error {
+	sd.logger.
+		WithField("params", []string{configName, namespace}).
+		WithField("rows", len(servicesScans)).
+		Debug("Update services scans")
 	key := daoKey{
 		kubeconfigName: configName,
 		namespace:      namespace,
