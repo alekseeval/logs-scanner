@@ -1,10 +1,10 @@
 CREATE OR REPLACE FUNCTION kube_api.edit_kubeconfig(p_name varchar, p_config_str varchar)
-RETURNS kube.kubeconfigs
+RETURNS kube.v_configs
 LANGUAGE plpgsql
 AS
 $$
 DECLARE
-    r_kubeconfig kube.kubeconfigs;
+    r_kubeconfig kube.v_configs;
 BEGIN
     if coalesce(p_name, '') = '' then
         RAISE SQLSTATE '80010' USING message = 'empty kubeconfig name provided';
@@ -18,8 +18,12 @@ BEGIN
 
     UPDATE kube.kubeconfigs
     SET config_str=p_config_str
+    WHERE name=p_name;
+
+    SELECT * from kube.v_configs
     WHERE name=p_name
-    RETURNING * INTO r_kubeconfig;
+    limit 1
+    INTO r_kubeconfig;
 
     RETURN r_kubeconfig;
 END

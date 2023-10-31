@@ -19,6 +19,6 @@ CREATE TABLE if not exists kube.namespaces (
 );
 
 CREATE OR REPLACE VIEW v_configs AS
-    SELECT kc.name, kc.config_str, array_agg(ns.name) filter (WHERE ns.name is not null) as namespaces
+    SELECT kc.name, kc.config_str, coalesce(array_agg(ns.name) filter (WHERE ns.name is not null), ARRAY[]::text[]) as namespaces
     FROM kube.kubeconfigs kc LEFT JOIN kube.namespaces ns ON kc.name = ns.kc_name
     GROUP BY kc.name, kc.config_str;
