@@ -122,7 +122,7 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 		return nil, nil, err
 	}
 	for _, pod := range pods.Items {
-		// Get some pod logs
+		// Get pod logs
 		switch pod.Status.Phase {
 		case v1.PodRunning:
 			serviceScan, err := ks.ScanServiceLog(kubeClient, &pod)
@@ -130,6 +130,7 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 				ks.logger.
 					WithField("error", err).
 					Error("Error occured while getting pod logs")
+				continue
 			}
 			servicesScans = append(servicesScans, *serviceScan)
 		case v1.PodFailed, v1.PodSucceeded:
@@ -138,6 +139,7 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 				ks.logger.
 					WithField("error", err).
 					Error("Error occured while getting pod logs")
+				continue
 			}
 			jobsScans = append(jobsScans, *jobScan)
 		}
