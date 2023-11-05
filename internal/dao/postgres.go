@@ -44,11 +44,11 @@ func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*Postgre
 	}, err
 }
 
-// AddKubeConfig saves model.Cluster, except Namespaces field
+// AddCluster saves model.Cluster, except Namespaces field
 //
 //	To save Namespaces should be used PostgresDB.AddNamespaceToCluster method
 func (p *PostgresDB) AddCluster(cluster *model.Cluster) (*model.Cluster, error) {
-	queryRow := `SELECT * FROM create_kubeconfig($1, $2)`
+	queryRow := `SELECT * FROM create_cluster($1, $2)`
 	queryParams := []interface{}{cluster.Name, cluster.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv clusterView
@@ -58,7 +58,7 @@ func (p *PostgresDB) AddCluster(cluster *model.Cluster) (*model.Cluster, error) 
 }
 
 func (p *PostgresDB) GetClusterByName(clusterName string) (*model.Cluster, error) {
-	queryRow := `SELECT * FROM get_kubeconfig_by_name($1)`
+	queryRow := `SELECT * FROM get_cluster_by_name($1)`
 	queryParams := []interface{}{clusterName}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv clusterView
@@ -71,7 +71,7 @@ func (p *PostgresDB) GetClusterByName(clusterName string) (*model.Cluster, error
 //
 //	To change namespaces list where AddNamespaceToCluster and DeleteNamespaceFromCluster methods
 func (p *PostgresDB) EditClusterConfig(clusterName string, clusterConfig string) (*model.Cluster, error) {
-	queryRow := `SELECT * FROM edit_kubeconfig($1, $2)`
+	queryRow := `SELECT * FROM edit_cluster($1, $2)`
 	queryParams := []interface{}{clusterName, clusterConfig}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv clusterView
@@ -81,7 +81,7 @@ func (p *PostgresDB) EditClusterConfig(clusterName string, clusterConfig string)
 }
 
 func (p *PostgresDB) DeleteCluster(clusterName string) error {
-	queryRow := `SELECT * FROM delete_kubeconfig($1)`
+	queryRow := `SELECT * FROM delete_cluster($1)`
 	queryParams := []interface{}{clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
@@ -89,7 +89,7 @@ func (p *PostgresDB) DeleteCluster(clusterName string) error {
 }
 
 func (p *PostgresDB) GetAllClusters() ([]model.Cluster, error) {
-	queryRow := `SELECT * FROM get_kubeconfigs()`
+	queryRow := `SELECT * FROM get_clusters()`
 	rows, err := p.db.Queryx(queryRow)
 	if err != nil {
 		return nil, err
