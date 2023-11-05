@@ -16,14 +16,14 @@ type PostgresDB struct {
 	logger *logrus.Entry
 }
 
-type kubeConfigView struct {
+type clusterView struct {
 	Config     string         `db:"config_str"`
 	Name       string         `db:"name"`
 	NameSpaces pq.StringArray `db:"namespaces"`
 }
 
-func (kcv *kubeConfigView) convertToKubeConfig() *model.KubeConfig {
-	return &model.KubeConfig{
+func (kcv *clusterView) convertToCluster() *model.Cluster {
+	return &model.Cluster{
 		Config:     kcv.Config,
 		Name:       kcv.Name,
 		Namespaces: kcv.NameSpaces,
@@ -44,78 +44,78 @@ func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*Postgre
 	}, err
 }
 
-// AddKubeConfig saves model.KubeConfig, except Namespaces field
+// AddKubeConfig saves model.Cluster, except Namespaces field
 //
-//	To save Namespaces should be used PostgresDB.AddNamespaceToCubeConfig method
-func (p *PostgresDB) AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
+//	To save Namespaces should be used PostgresDB.AddNamespaceToCluster method
+func (p *PostgresDB) AddCluster(cluster *model.Cluster) (*model.Cluster, error) {
 	queryRow := `SELECT * FROM create_kubeconfig($1, $2)`
-	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
+	queryParams := []interface{}{cluster.Name, cluster.Config}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kcv kubeConfigView
+	var kcv clusterView
 	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToKubeConfig(), err
+	return kcv.convertToCluster(), err
 }
 
-func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error) {
+func (p *PostgresDB) GetClusterByName(clusterName string) (*model.Cluster, error) {
 	queryRow := `SELECT * FROM get_kubeconfig_by_name($1)`
-	queryParams := []interface{}{kubeConfigName}
+	queryParams := []interface{}{clusterName}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kcv kubeConfigView
+	var kcv clusterView
 	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToKubeConfig(), err
+	return kcv.convertToCluster(), err
 }
 
-// EditKubeConfig change kubeconfig access string only
+// EditKubeConfig change cluster config only
 //
-//	To change namespaces list where AddNamespaceToCubeConfig and DeleteNamespaceFromKubeconfig methods
-func (p *PostgresDB) EditKubeConfig(clusterName string, kubeconfig string) (*model.KubeConfig, error) {
+//	To change namespaces list where AddNamespaceToCluster and DeleteNamespaceFromCluster methods
+func (p *PostgresDB) EditClusterConfig(clusterName string, clusterConfig string) (*model.Cluster, error) {
 	queryRow := `SELECT * FROM edit_kubeconfig($1, $2)`
-	queryParams := []interface{}{clusterName, kubeconfig}
+	queryParams := []interface{}{clusterName, clusterConfig}
 	row := p.db.QueryRowx(queryRow, queryParams...)
-	var kcv kubeConfigView
+	var kcv clusterView
 	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToKubeConfig(), err
+	return kcv.convertToCluster(), err
 }
 
-func (p *PostgresDB) DeleteKubeConfig(kubeConfigName string) error {
+func (p *PostgresDB) DeleteCluster(clusterName string) error {
 	queryRow := `SELECT * FROM delete_kubeconfig($1)`
-	queryParams := []interface{}{kubeConfigName}
+	queryParams := []interface{}{clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
 	return err
 }
 
-func (p *PostgresDB) GetAllConfigs() ([]model.KubeConfig, error) {
+func (p *PostgresDB) GetAllClusters() ([]model.Cluster, error) {
 	queryRow := `SELECT * FROM get_kubeconfigs()`
 	rows, err := p.db.Queryx(queryRow)
 	if err != nil {
 		return nil, err
 	}
-	allConfigs := make([]model.KubeConfig, 0)
+	allConfigs := make([]model.Cluster, 0)
 	p.logDBRequest(queryRow, nil)
 	for rows.Next() {
-		var kcv kubeConfigView
+		var kcv clusterView
 		err = rows.StructScan(&kcv)
 		if err != nil {
 			return nil, err
 		}
-		allConfigs = append(allConfigs, *kcv.convertToKubeConfig())
+		allConfigs = append(allConfigs, *kcv.convertToCluster())
 	}
 	return allConfigs, err
 }
 
-func (p *PostgresDB) AddNamespaceToCubeConfig(kubeConfigName string, namespaceName string) error {
+func (p *PostgresDB) AddNamespaceToCluster(clusterName string, namespaceName string) error {
 	queryRow := `SELECT * FROM add_namespace($1, $2)`
-	queryParams := []interface{}{namespaceName, kubeConfigName}
+	queryParams := []interface{}{namespaceName, clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
 	return err
 }
 
-func (p *PostgresDB) DeleteNamespaceFromKubeconfig(clusterName string, namespaceName string) error {
+func (p *PostgresDB) DeleteNamespaceFromCluster(clusterName string, namespaceName string) error {
 	queryRow := `SELECT * FROM delete_namespace($1, $2)`
 	queryParams := []interface{}{namespaceName, clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)

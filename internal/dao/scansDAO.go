@@ -20,17 +20,17 @@ func NewScansDao(logger *logrus.Entry) ScansDao {
 }
 
 type daoKey struct {
-	kubeconfigName string
-	namespace      string
+	clusterName string
+	namespace   string
 }
 
-func (sd *ScansDao) GetJobsScans(configName string, namespace string) []model.JobScan {
+func (sd *ScansDao) GetJobsScans(clusterName string, namespace string) []model.JobScan {
 	sd.logger.
-		WithField("params", []string{configName, namespace}).
+		WithField("params", []string{clusterName, namespace}).
 		Debug("Get jobs scans")
 	scans := sd.jobsScans[daoKey{
-		kubeconfigName: configName,
-		namespace:      namespace,
+		clusterName: clusterName,
+		namespace:   namespace,
 	}]
 	if scans != nil {
 		return scans
@@ -39,26 +39,26 @@ func (sd *ScansDao) GetJobsScans(configName string, namespace string) []model.Jo
 	}
 }
 
-func (sd *ScansDao) UpdateJobsScans(configName string, namespace string, jobsScans []model.JobScan) error {
+func (sd *ScansDao) UpdateJobsScans(clusterName string, namespace string, jobsScans []model.JobScan) error {
 	sd.logger.
-		WithField("params", []string{configName, namespace}).
+		WithField("params", []string{clusterName, namespace}).
 		WithField("rows", len(jobsScans)).
 		Debug("Update jobs scans")
 	key := daoKey{
-		kubeconfigName: configName,
-		namespace:      namespace,
+		clusterName: clusterName,
+		namespace:   namespace,
 	}
 	sd.jobsScans[key] = jobsScans
 	return nil
 }
 
-func (sd *ScansDao) GetServicesScans(configName string, namespace string) []model.ServiceScan {
+func (sd *ScansDao) GetServicesScans(clusterName string, namespace string) []model.ServiceScan {
 	sd.logger.
-		WithField("params", []string{configName, namespace}).
+		WithField("params", []string{clusterName, namespace}).
 		Debug("Get services scans")
 	scans := sd.servicesScans[daoKey{
-		kubeconfigName: configName,
-		namespace:      namespace,
+		clusterName: clusterName,
+		namespace:   namespace,
 	}]
 	if scans != nil {
 		return scans
@@ -67,14 +67,14 @@ func (sd *ScansDao) GetServicesScans(configName string, namespace string) []mode
 	}
 }
 
-func (sd *ScansDao) UpdateServicesScans(configName string, namespace string, servicesScans []model.ServiceScan) error {
+func (sd *ScansDao) UpdateServicesScans(clusterName string, namespace string, servicesScans []model.ServiceScan) error {
 	sd.logger.
-		WithField("params", []string{configName, namespace}).
+		WithField("params", []string{clusterName, namespace}).
 		WithField("rows", len(servicesScans)).
 		Debug("Update services scans")
 	key := daoKey{
-		kubeconfigName: configName,
-		namespace:      namespace,
+		clusterName: clusterName,
+		namespace:   namespace,
 	}
 	sd.servicesScans[key] = servicesScans
 	return nil

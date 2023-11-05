@@ -69,14 +69,14 @@ func (s *HttpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 
 func (s *HttpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	configs, err := s.storage.GetAllConfigs()
+	clusters, err := s.storage.GetAllClusters()
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0,
 			Description: "TODO",
 		})
 	}
-	err = json.NewEncoder(w).Encode(configs)
+	err = json.NewEncoder(w).Encode(clusters)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -97,7 +97,7 @@ func (s *HttpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	kubeConfig, err := s.storage.GetKubeConfigByName(clusterName)
+	cluster, err := s.storage.GetClusterByName(clusterName)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0,
@@ -105,7 +105,7 @@ func (s *HttpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err = json.NewEncoder(w).Encode(kubeConfig)
+	err = json.NewEncoder(w).Encode(cluster)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -118,7 +118,7 @@ func (s *HttpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 func (s *HttpServer) createCluster(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var cluster model.KubeConfig
+	var cluster model.Cluster
 	err := json.NewDecoder(r.Body).Decode(&cluster)
 	if err != nil {
 		s.handleError(w, model.ServerError{
@@ -127,7 +127,7 @@ func (s *HttpServer) createCluster(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	addedCluster, err := s.storage.AddKubeConfig(&cluster)
+	addedCluster, err := s.storage.AddCluster(&cluster)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0,
@@ -156,7 +156,7 @@ func (s *HttpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err := s.storage.DeleteKubeConfig(clusterName)
+	err := s.storage.DeleteCluster(clusterName)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0,
@@ -187,7 +187,7 @@ func (s *HttpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err = s.storage.AddNamespaceToCubeConfig(clusterName, namespaceStruct.Namespace)
+	err = s.storage.AddNamespaceToCluster(clusterName, namespaceStruct.Namespace)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -217,7 +217,7 @@ func (s *HttpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err := s.storage.DeleteNamespaceFromKubeconfig(clusterName, namespace)
+	err := s.storage.DeleteNamespaceFromCluster(clusterName, namespace)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -248,7 +248,7 @@ func (s *HttpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request)
 		})
 		return
 	}
-	cluster, err := s.storage.EditKubeConfig(clusterName, clusterConfigStruct.Config)
+	cluster, err := s.storage.EditClusterConfig(clusterName, clusterConfigStruct.Config)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO

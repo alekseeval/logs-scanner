@@ -16,7 +16,7 @@ const (
 	Fatal   LogLevelType = "fatal"
 )
 
-type KubeConfig struct {
+type Cluster struct {
 	Config     string   `json:"config"`
 	Name       string   `json:"name"`
 	Namespaces []string `json:"namespaces"`

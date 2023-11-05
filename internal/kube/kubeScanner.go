@@ -71,45 +71,45 @@ func (ks *KubeScanner) Shutdown() {
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI
 func (ks *KubeScanner) ScanAll() {
-	kubeConfigs, err := ks.storage.GetAllConfigs()
+	clusters, err := ks.storage.GetAllClusters()
 	if err != nil {
 		ks.logger.
 			WithField("error", err).
 			Error("Failed to get configs from DB")
 		return
 	}
-	for _, cfg := range kubeConfigs {
-		kubeConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(cfg.Config))
+	for _, cluster := range clusters {
+		kubeRest, err := clientcmd.RESTConfigFromKubeConfig([]byte(cluster.Config))
 		if err != nil {
 			ks.logger.
 				WithField("error", err).
 				Error("Failed to initialize kubernetes config from DB string")
 			continue
 		}
-		kubeConfig.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
-		clientSet, err := kubernetes.NewForConfig(kubeConfig)
+		kubeRest.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
+		kubeClientSet, err := kubernetes.NewForConfig(kubeRest)
 		if err != nil {
 			ks.logger.
 				WithField("error", err).
 				Error("Failed to initialize kubernetes config client set")
 		}
-		for _, ns := range cfg.Namespaces {
-			ks.logger.Debugf("Start scan namespace %s from cluster %s", ns, cfg.Name)
-			servicesScans, jobsScans, err := ks.ScanNamespace(clientSet, ns)
+		for _, ns := range cluster.Namespaces {
+			ks.logger.Debugf("Start scan namespace %s from cluster %s", ns, cluster.Name)
+			servicesScans, jobsScans, err := ks.ScanNamespace(kubeClientSet, ns)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
 					Error(fmt.Sprintf("Failed to scan namespace %s", ns))
 				continue
 			}
-			ks.logger.Debugf("Namespace %s from cluster %s was successfully scanned", ns, cfg.Name)
-			err = ks.storage.UpdateJobsScans(cfg.Name, ns, jobsScans)
+			ks.logger.Debugf("Namespace %s from cluster %s was successfully scanned", ns, cluster.Name)
+			err = ks.storage.UpdateJobsScans(cluster.Name, ns, jobsScans)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
 					Error("Failed to save Jobs scans")
 			}
-			err = ks.storage.UpdateServicesScans(cfg.Name, ns, servicesScans)
+			err = ks.storage.UpdateServicesScans(cluster.Name, ns, servicesScans)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
