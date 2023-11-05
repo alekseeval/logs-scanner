@@ -178,9 +178,7 @@ func (s *HttpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	var namespaceStruct struct {
-		Namespace *string `json:"namespace"`
-	}
+	var namespaceStruct namespaceRequestStruct
 	err := json.NewDecoder(r.Body).Decode(&namespaceStruct)
 	if err != nil {
 		s.handleError(w, model.ServerError{
@@ -189,7 +187,7 @@ func (s *HttpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err = s.storage.AddNamespaceToCubeConfig(clusterName, *namespaceStruct.Namespace)
+	err = s.storage.AddNamespaceToCubeConfig(clusterName, namespaceStruct.Namespace)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -241,10 +239,8 @@ func (s *HttpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request)
 		})
 		return
 	}
-	var kubeconfigStruct struct {
-		Config string `json:"config"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&kubeconfigStruct)
+	var clusterConfigStruct clusterConfigRequestStruct
+	err := json.NewDecoder(r.Body).Decode(&clusterConfigStruct)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
@@ -252,7 +248,7 @@ func (s *HttpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request)
 		})
 		return
 	}
-	cluster, err := s.storage.EditKubeConfig(clusterName, kubeconfigStruct.Config)
+	cluster, err := s.storage.EditKubeConfig(clusterName, clusterConfigStruct.Config)
 	if err != nil {
 		s.handleError(w, model.ServerError{
 			Code:        0, // TODO
