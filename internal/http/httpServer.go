@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// TODO: логировать запросы
 // TODO: унифицировать обработку ошибок записи json
 // TODO: дописать хендлеры на остальные запросы
 
@@ -26,8 +25,17 @@ func NewHttpServer(storage kube.StorageI, loggerEntry *logrus.Entry, cfg *config
 	}
 	r := mux.NewRouter()
 	r.Use(httpServer.loggingMiddleware)
-	r.HandleFunc("/cluster/{cluster}/namespace/{namespace}/jobs-scans", httpServer.getJobsScans).Methods("GET")
-	r.HandleFunc("/cluster/{cluster}/namespace/{namespace}/services-scans", httpServer.getServicesScans).Methods("GET")
+	// Clusters
+	r.HandleFunc("/api/v1/clusters", httpServer.getAllClusters).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/clusters/{cluster}", httpServer.getCluster).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/clusters", httpServer.createCluster).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/clusters/{cluster}", httpServer.deleteCluster).Methods(http.MethodDelete)
+	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces", httpServer.addNamespace).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces/{namespace}", httpServer.deleteNamespace).Methods(http.MethodDelete)
+	r.HandleFunc("/api/v1/clusters/{cluster}/config", httpServer.changeClusterConfig).Methods(http.MethodPatch)
+	// Scans
+	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces/{namespace}/jobs-scans", httpServer.getJobsScans).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces/{namespace}/services-scans", httpServer.getServicesScans).Methods(http.MethodGet)
 	return &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.System.Http.Port),
 		Handler:      r,

@@ -7,6 +7,7 @@ import (
 )
 
 func (s *HttpServer) handleError(w http.ResponseWriter, serverError model.ServerError) {
+	w.WriteHeader(http.StatusBadRequest)
 	err := json.NewEncoder(w).Encode(serverError)
 	if err != nil {
 		s.logger.
@@ -14,5 +15,4 @@ func (s *HttpServer) handleError(w http.ResponseWriter, serverError model.Server
 			Error("Failed to marshall error response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	w.WriteHeader(http.StatusBadRequest)
 }
