@@ -1,4 +1,4 @@
-package http
+package httpServer
 
 import (
 	"k8s.io/apimachinery/pkg/util/json"

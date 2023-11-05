@@ -1,4 +1,4 @@
-package http
+package httpServer
 
 type namespaceRequestStruct struct {
 	Namespace string `json:"namespace"`

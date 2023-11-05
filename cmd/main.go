@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	http2 "net/http"
+	http "net/http"
 	"os"
 	"os/signal"
 	"scan_project/configuration"
 	"scan_project/internal/dao"
-	"scan_project/internal/http"
+	"scan_project/internal/httpServer"
 	"scan_project/internal/kube"
 	"syscall"
 	"time"
@@ -19,6 +19,12 @@ const (
 	pathToConfig    = "/home/reserv/GolandProjects/LogScan/config.json"
 	DefaultLogLevel = logrus.InfoLevel
 )
+
+// TODO: исправить проброс ошибок из БД и обрабатывать их в HTTP (переписать хэндлер ошибок)
+// TODO: Написать Swagger-файл
+
+// TODO: остается проблема, когда сканы старых добавленных конфигов не стираются из памяти
+// TODO: русский PostgreSQL... Надо доработать regexp на такой случай (???)
 
 func main() {
 
@@ -59,17 +65,19 @@ func main() {
 	go kubeScanner.Start(config.ScanDelay)
 	defer kubeScanner.Shutdown()
 
-	// Start http.server
-	server := http.NewHttpServer(storage, logger.WithField("app", "http-server"), config)
+	// Start httpServer.server
+	server := httpServer.NewHttpServer(storage, logger.WithField("app", "httpServer-server"), config)
 	go func() {
 		err := server.ListenAndServe()
-		if err != http2.ErrServerClosed && err != nil {
+		if err == http.ErrServerClosed {
+			logger.Info("Http server was closed")
+		} else {
 			logger.
 				WithField("error", err).
 				Error("Failed to start the HTTP Server")
 		}
 	}()
-	defer func(server *http2.Server) {
+	defer func(server *http.Server) {
 		ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer ctxCancel()
 		err := server.Shutdown(ctx)
