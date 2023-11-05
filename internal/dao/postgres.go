@@ -70,9 +70,9 @@ func (p *PostgresDB) GetKubeConfigByName(kubeConfigName string) (*model.KubeConf
 // EditKubeConfig change kubeconfig access string only
 //
 //	To change namespaces list where AddNamespaceToCubeConfig and DeleteNamespaceFromKubeconfig methods
-func (p *PostgresDB) EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error) {
+func (p *PostgresDB) EditKubeConfig(clusterName string, kubeconfig string) (*model.KubeConfig, error) {
 	queryRow := `SELECT * FROM edit_kubeconfig($1, $2)`
-	queryParams := []interface{}{kubeConfig.Name, kubeConfig.Config}
+	queryParams := []interface{}{clusterName, kubeconfig}
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv kubeConfigView
 	err := row.StructScan(&kcv)
@@ -115,9 +115,9 @@ func (p *PostgresDB) AddNamespaceToCubeConfig(kubeConfigName string, namespaceNa
 	return err
 }
 
-func (p *PostgresDB) DeleteNamespaceFromKubeconfig(namespaceName string) error {
+func (p *PostgresDB) DeleteNamespaceFromKubeconfig(clusterName string, namespaceName string) error {
 	queryRow := `SELECT * FROM delete_namespace($1, $2)`
-	queryParams := []interface{}{namespaceName}
+	queryParams := []interface{}{namespaceName, clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
 	return err

@@ -24,6 +24,7 @@ type KubeScanner struct {
 	stopChan          chan struct{}
 	startProcessWg    sync.WaitGroup
 	jobsRegexp        *regexp.Regexp
+	isRunning         bool
 }
 
 func NewKubeScanner(storage StorageI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
@@ -35,6 +36,7 @@ func NewKubeScanner(storage StorageI, KubernetesTimeout *int, logger *logrus.Ent
 		startProcessWg:    sync.WaitGroup{},
 		logger:            logger,
 		stopChan:          make(chan struct{}, 1),
+		isRunning:         false,
 	}
 }
 
@@ -42,6 +44,7 @@ func NewKubeScanner(storage StorageI, KubernetesTimeout *int, logger *logrus.Ent
 //
 // The first scan will take place immediately
 func (ks *KubeScanner) Start(intervalSec int) {
+	ks.isRunning = true
 	ks.startProcessWg.Add(1)
 	defer ks.startProcessWg.Done()
 	ks.ScanAll()
@@ -60,6 +63,7 @@ func (ks *KubeScanner) Start(intervalSec int) {
 
 func (ks *KubeScanner) Shutdown() {
 	ks.stopChan <- struct{}{}
+	ks.isRunning = false
 	ks.logger.Info("Stopping KubeScanner")
 	ks.startProcessWg.Wait()
 	ks.logger.Info("KubeScanner successfully stopped")
@@ -72,6 +76,7 @@ func (ks *KubeScanner) ScanAll() {
 		ks.logger.
 			WithField("error", err).
 			Error("Failed to get configs from DB")
+		return
 	}
 	for _, cfg := range kubeConfigs {
 		kubeConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(cfg.Config))
@@ -79,6 +84,7 @@ func (ks *KubeScanner) ScanAll() {
 			ks.logger.
 				WithField("error", err).
 				Error("Failed to initialize kubernetes config from DB string")
+			continue
 		}
 		kubeConfig.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
 		clientSet, err := kubernetes.NewForConfig(kubeConfig)
@@ -123,6 +129,9 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 	}
 	for _, pod := range pods.Items {
 		// Get pod logs
+		if !ks.isRunning {
+			return nil, nil, fmt.Errorf("scanner was stopped")
+		}
 		switch pod.Status.Phase {
 		case v1.PodRunning:
 			serviceScan, err := ks.ScanServiceLog(kubeClient, &pod)

@@ -20,14 +20,14 @@ type ScansDAOI interface {
 type kubeConfigDAOI interface {
 	AddKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error)
 	GetKubeConfigByName(kubeConfigName string) (*model.KubeConfig, error)
-	EditKubeConfig(kubeConfig *model.KubeConfig) (*model.KubeConfig, error)
+	EditKubeConfig(clusterName string, kubeconfig string) (*model.KubeConfig, error)
 	DeleteKubeConfig(kubeConfigName string) error
 	GetAllConfigs() ([]model.KubeConfig, error)
 }
 
 type namespaceDAOI interface {
 	AddNamespaceToCubeConfig(kubeConfigName string, NamespaceName string) error
-	DeleteNamespaceFromKubeconfig(namespaceName string) error
+	DeleteNamespaceFromKubeconfig(clusterName string, namespaceName string) error
 }
 
 type jobsScanDAOI interface {
