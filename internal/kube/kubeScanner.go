@@ -41,7 +41,10 @@ func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.
 // Start will do scan all kubernetes clusters gotten from ClusterDAOI every intervalSec seconds and save result in ScansDAOI
 //
 // The first scan will take place immediately
-func (ks *KubeScanner) Start(intervalSec int) {
+func (ks *KubeScanner) Start(intervalSec int) error {
+	if ks.isRunning {
+		return fmt.Errorf("kube-scanner are already running")
+	}
 	ks.isRunning = true
 	ks.startProcessWg.Add(1)
 	defer ks.startProcessWg.Done()
@@ -51,7 +54,7 @@ func (ks *KubeScanner) Start(intervalSec int) {
 		select {
 		case <-ks.stopChan:
 			ticker.Stop()
-			return
+			return nil
 		case <-ticker.C:
 			ks.ScanAll()
 			ticker.Reset(time.Duration(intervalSec) * time.Second)
@@ -59,12 +62,26 @@ func (ks *KubeScanner) Start(intervalSec int) {
 	}
 }
 
-func (ks *KubeScanner) Shutdown() {
+func (ks *KubeScanner) Shutdown(ctx context.Context) error {
+	if !ks.isRunning {
+		return fmt.Errorf("kube-scanner is already down")
+	}
 	ks.stopChan <- struct{}{}
 	ks.isRunning = false
 	ks.logger.Info("Stopping KubeScanner")
-	ks.startProcessWg.Wait()
-	ks.logger.Info("KubeScanner successfully stopped")
+	shutdownWg := make(chan struct{}, 1)
+	go func() {
+		ks.startProcessWg.Wait()
+		shutdownWg <- struct{}{}
+	}()
+	select {
+	case <-shutdownWg:
+		ks.logger.Info("KubeScanner successfully stopped")
+	case <-ctx.Done():
+		ks.logger.Info("KubeScanner is forced to stop")
+		return fmt.Errorf("kube-scanner is forced to stop. Some processes may be not done yet")
+	}
+	return nil
 }
 
 // ScanAll scans all configs and namespaces from model.ClusterDAOI and saved them into model.ScansDAOI

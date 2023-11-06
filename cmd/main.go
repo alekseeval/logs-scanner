@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	pathToConfig    = "/home/reserv/GolandProjects/LogScan/config.json"
-	DefaultLogLevel = logrus.InfoLevel
+	pathToConfig               = "/home/reserv/GolandProjects/LogScan/config.json"
+	DefaultLogLevel            = logrus.InfoLevel
+	HttpServerShutdownTimeout  = 5 * time.Second
+	KubeScannerShutdownTimeout = 10 * time.Second
 )
 
-// TODO: расширито логи скана и отрефакторить там код (распараллелить???)
 // TODO: Написать Swagger-файл
 // TODO: написать dockerfile для приложения и сбилдить образ (не забыть переместить конфиг в /etc/)
 
@@ -63,8 +64,23 @@ func main() {
 		config,
 		logrus.NewEntry(logger).WithField("app", "kube-scanner"),
 	)
-	go kubeScanner.Start(config.ScanDelay)
-	defer kubeScanner.Shutdown() // TODO: дописать contextWithDeadline для завершения работы
+	go func() {
+		err = kubeScanner.Start(config.ScanDelay)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("failed to start kube-scanner")
+		}
+		return
+	}()
+	defer func() {
+		KSCtx, ctxCancel := context.WithTimeout(context.Background(), KubeScannerShutdownTimeout)
+		defer ctxCancel()
+		err = kubeScanner.Shutdown(KSCtx)
+		if err != nil {
+			logger.WithField("error", err).Error("Failed to gracefully shutdown kube-scanner")
+		}
+	}()
 
 	// Start httpServer.server
 	server := httpServer.NewHttpServer(config, storage, logger.WithField("app", "httpServer-server"))
@@ -79,7 +95,7 @@ func main() {
 		}
 	}()
 	defer func(server *http.Server) {
-		ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, ctxCancel := context.WithTimeout(context.Background(), HttpServerShutdownTimeout)
 		defer ctxCancel()
 		err := server.Shutdown(ctx)
 		if err != nil {
