@@ -20,5 +20,5 @@
     "level": "trace"
   },
   "scan_delay": 30,
-  "jobs_grep_pattern": "error"
+  "jobs_grep_pattern": "(?i)error|(?i)ошибка"
 }

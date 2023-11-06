@@ -26,11 +26,10 @@ type KubeScanner struct {
 }
 
 func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.Entry) *KubeScanner {
-	// TODO: Проброс из кофига ключевого слова для грепа? error использовать как default?
 	return &KubeScanner{
 		storage:           storage,
 		kubernetesTimeout: cfg.System.Kubernetes.Timeout,
-		jobsRegexp:        regexp.MustCompile("(?i)error|(?i)ошибка"),
+		jobsRegexp:        regexp.MustCompile(cfg.JobsGrepPattern),
 		startProcessWg:    sync.WaitGroup{},
 		logger:            logger,
 		stopChan:          make(chan struct{}, 1),
