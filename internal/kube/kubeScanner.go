@@ -138,28 +138,40 @@ func (ks *KubeScanner) ScanNamespace(cluster model.Cluster, namespace string) er
 		jobsScans     = make([]model.JobScan, 0)
 	)
 	// Scan gotten pods
+	wg := sync.WaitGroup{}
+	mutex := sync.Mutex{}
 	for _, pod := range pods.Items {
-		switch pod.Status.Phase {
-		case v1.PodRunning:
-			serviceScan, err := ks.scanServiceLog(kubeClient, &pod)
-			if err != nil {
-				ks.logger.
-					WithField("error", err).
-					Errorf("Error occured while scanning pod %s logs", pod.Name)
-				continue
+		wg.Add(1)
+		time.Sleep(time.Second / 5) //  Else stack on cluster limits and get Error from time to time
+		go func(p v1.Pod) {
+			defer wg.Done()
+			switch p.Status.Phase {
+			case v1.PodRunning:
+				serviceScan, err := ks.scanServiceLog(kubeClient, &p)
+				if err != nil {
+					ks.logger.
+						WithField("error", err).
+						Errorf("Error occured while scanning pod %s logs", p.Name)
+					return
+				}
+				mutex.Lock()
+				servicesScans = append(servicesScans, *serviceScan)
+				mutex.Unlock()
+			case v1.PodFailed, v1.PodSucceeded:
+				jobScan, err := ks.scanJobLog(kubeClient, &p)
+				if err != nil {
+					ks.logger.
+						WithField("error", err).
+						Errorf("Error occured while getting pod %s logs", p.Name)
+					return
+				}
+				mutex.Lock()
+				jobsScans = append(jobsScans, *jobScan)
+				mutex.Unlock()
 			}
-			servicesScans = append(servicesScans, *serviceScan)
-		case v1.PodFailed, v1.PodSucceeded:
-			jobScan, err := ks.scanJobLog(kubeClient, &pod)
-			if err != nil {
-				ks.logger.
-					WithField("error", err).
-					Errorf("Error occured while getting pod %s logs", pod.Name)
-				continue
-			}
-			jobsScans = append(jobsScans, *jobScan)
-		}
+		}(pod)
 	}
+	wg.Wait()
 	// Save all scans result
 	err = ks.storage.UpdateServicesScans(cluster.Name, namespace, servicesScans)
 	if err != nil {
