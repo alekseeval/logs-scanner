@@ -13,21 +13,21 @@ import (
 )
 
 func (ks *KubeScanner) scanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.Pod) (serviceScan *model.ServiceScan, err error) {
+	// Init pod common data into Scan struct
 	serviceScan = &model.ServiceScan{
 		ServiceName:     pod.Name,
 		LogTypeCountMap: make(map[model.LogLevelType]int),
+		Uptime:          time.Now().Sub(pod.CreationTimestamp.Time),
 	}
-	serviceScan.ServiceName = pod.Name
-	// Use first pod container, to get restarts count
 	var restartCount int
 	if len(pod.Status.ContainerStatuses) != 0 {
-		restartCount = int(pod.Status.ContainerStatuses[0].RestartCount)
+		restartCount = int(pod.Status.ContainerStatuses[0].RestartCount) // Use first pod container, to get restarts count
 	}
 	serviceScan.RestartsCount = restartCount
-	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time)
+	// Get all pod logs
 	podLogOpts := &v1.PodLogOptions{}
 	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
-	podLogsStream, err := req.Stream(context.TODO())
+	podLogsStream, err := req.Stream(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +55,10 @@ func (ks *KubeScanner) scanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 }
 
 func (ks *KubeScanner) scanJobLog(kubeClient *kubernetes.Clientset, pod *v1.Pod) (*model.JobScan, error) {
+	// Get all pod logs
 	podLogOpts := &v1.PodLogOptions{}
 	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
-	podLogsStream, err := req.Stream(context.TODO())
+	podLogsStream, err := req.Stream(context.Background())
 	if err != nil {
 		return nil, err
 	}
