@@ -64,7 +64,7 @@ func main() {
 		logrus.NewEntry(logger).WithField("app", "kube-scanner"),
 	)
 	go kubeScanner.Start(config.ScanDelay)
-	defer kubeScanner.Shutdown()
+	defer kubeScanner.Shutdown() // TODO: дописать contextWithDeadline для завершения работы
 
 	// Start httpServer.server
 	server := httpServer.NewHttpServer(config, storage, logger.WithField("app", "httpServer-server"))
@@ -79,7 +79,7 @@ func main() {
 		}
 	}()
 	defer func(server *http.Server) {
-		ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, ctxCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer ctxCancel()
 		err := server.Shutdown(ctx)
 		if err != nil {

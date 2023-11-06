@@ -73,70 +73,73 @@ func (ks *KubeScanner) ScanAll() {
 	if err != nil {
 		ks.logger.
 			WithField("error", err).
-			Error("Failed to get configs from DB")
+			Error("failed to get clusters from DB")
 		return
 	}
 	for _, cluster := range clusters {
-		kubeRest, err := clientcmd.RESTConfigFromKubeConfig([]byte(cluster.Config))
-		if err != nil {
-			ks.logger.
-				WithField("error", err).
-				Error("Failed to initialize kubernetes config from DB string")
-			continue
-		}
-		kubeRest.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
-		kubeClientSet, err := kubernetes.NewForConfig(kubeRest)
-		if err != nil {
-			ks.logger.
-				WithField("error", err).
-				Error("Failed to initialize kubernetes config client set")
-		}
-		for _, ns := range cluster.Namespaces {
-			ks.logger.Debugf("Start scan namespace %s from cluster %s", ns, cluster.Name)
-			servicesScans, jobsScans, err := ks.ScanNamespace(kubeClientSet, ns)
-			if err != nil {
-				ks.logger.
-					WithField("error", err).
-					Error(fmt.Sprintf("Failed to scan namespace %s", ns))
-				continue
-			}
-			ks.logger.Debugf("Namespace %s from cluster %s was successfully scanned", ns, cluster.Name)
-			err = ks.storage.UpdateJobsScans(cluster.Name, ns, jobsScans)
-			if err != nil {
-				ks.logger.
-					WithField("error", err).
-					Error("Failed to save Jobs scans")
-			}
-			err = ks.storage.UpdateServicesScans(cluster.Name, ns, servicesScans)
-			if err != nil {
-				ks.logger.
-					WithField("error", err).
-					Error("Failed to save Services scans")
-			}
-		}
+		ks.ScanCluster(cluster)
 	}
 }
 
-// ScanNamespace return scans for jobs and services into specific Namespace for cluster
-func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace string) (servicesScans []model.ServiceScan, jobsScans []model.JobScan, err error) {
-	// Get all pods
-
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, pod := range pods.Items {
-		// Get pod logs
-		if !ks.isRunning {
-			return nil, nil, fmt.Errorf("scanner was stopped")
+func (ks *KubeScanner) ScanCluster(cluster model.Cluster) {
+	ks.logger.Tracef("Start scanning namespace cluster %s", cluster.Name)
+	for _, namespace := range cluster.Namespaces {
+		ks.logger.Tracef("Start scanning namespace %s in cluster %s", namespace, cluster.Name)
+		err := ks.ScanNamespace(cluster, namespace)
+		if err != nil {
+			ks.logger.
+				WithField("error", err).
+				Errorf("Failed to scan namespace %s in cluster %s", namespace, cluster.Name)
+		} else {
+			ks.logger.Tracef("Successfully scanned namespace %s in cluster %s", namespace, cluster.Name)
 		}
+	}
+	ks.logger.Tracef("%s cluster scan completed", cluster.Name)
+}
+
+// ScanNamespace return scans for jobs and services into specific Namespace for cluster
+func (ks *KubeScanner) ScanNamespace(cluster model.Cluster, namespace string) error {
+	// Stop scanning if app are shutting down
+	if !ks.isRunning {
+		return fmt.Errorf("service was stopped, abort all scans")
+	}
+	// Init kubernetes REST
+	kubeRest, err := clientcmd.RESTConfigFromKubeConfig([]byte(cluster.Config))
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			Error("Failed to initialize kubernetes config from DB string")
+		return err
+	}
+	kubeRest.Timeout = time.Duration(*ks.kubernetesTimeout) * time.Second
+	kubeClient, err := kubernetes.NewForConfig(kubeRest)
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			Errorf("Failed to initialize kubernetes config client set for cluster %s", cluster.Name)
+		return err
+	}
+	// List all pods
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			Errorf("Failed to list all pods using kubernetes ClientSet for cluster %s", cluster.Name)
+		return err
+	}
+	var (
+		servicesScans = make([]model.ServiceScan, 0)
+		jobsScans     = make([]model.JobScan, 0)
+	)
+	// Scan gotten pods
+	for _, pod := range pods.Items {
 		switch pod.Status.Phase {
 		case v1.PodRunning:
 			serviceScan, err := ks.scanServiceLog(kubeClient, &pod)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
-					Error("Error occured while getting pod logs")
+					Errorf("Error occured while scanning pod %s logs", pod.Name)
 				continue
 			}
 			servicesScans = append(servicesScans, *serviceScan)
@@ -145,11 +148,26 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
-					Error("Error occured while getting pod logs")
+					Errorf("Error occured while getting pod %s logs", pod.Name)
 				continue
 			}
 			jobsScans = append(jobsScans, *jobScan)
 		}
 	}
-	return servicesScans, jobsScans, nil
+	// Save all scans result
+	err = ks.storage.UpdateServicesScans(cluster.Name, namespace, servicesScans)
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			Error("failed to save services scans")
+		return err
+	}
+	err = ks.storage.UpdateJobsScans(cluster.Name, namespace, jobsScans)
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			Error("failed to save jobs scans")
+		return err
+	}
+	return nil
 }
