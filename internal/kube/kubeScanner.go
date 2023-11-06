@@ -82,18 +82,24 @@ func (ks *KubeScanner) ScanAll() {
 }
 
 func (ks *KubeScanner) ScanCluster(cluster model.Cluster) {
-	ks.logger.Tracef("Start scanning namespace cluster %s", cluster.Name)
+	ks.logger.Tracef("Start scanning cluster %s", cluster.Name)
+	wg := sync.WaitGroup{}
 	for _, namespace := range cluster.Namespaces {
-		ks.logger.Tracef("Start scanning namespace %s in cluster %s", namespace, cluster.Name)
-		err := ks.ScanNamespace(cluster, namespace)
-		if err != nil {
-			ks.logger.
-				WithField("error", err).
-				Errorf("Failed to scan namespace %s in cluster %s", namespace, cluster.Name)
-		} else {
-			ks.logger.Tracef("Successfully scanned namespace %s in cluster %s", namespace, cluster.Name)
-		}
+		wg.Add(1)
+		go func(ns string) {
+			defer wg.Done()
+			ks.logger.Tracef("Start scanning namespace %s in cluster %s", ns, cluster.Name)
+			err := ks.ScanNamespace(cluster, ns)
+			if err != nil {
+				ks.logger.
+					WithField("error", err).
+					Errorf("Failed to scan namespace %s in cluster %s", ns, cluster.Name)
+			} else {
+				ks.logger.Tracef("Successfully scanned namespace %s in cluster %s", ns, cluster.Name)
+			}
+		}(namespace)
 	}
+	wg.Wait()
 	ks.logger.Tracef("%s cluster scan completed", cluster.Name)
 }
 
