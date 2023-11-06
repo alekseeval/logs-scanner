@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	http "net/http"
+	"net/http"
 	"os"
 	"os/signal"
 	"scan_project/configuration"
@@ -20,8 +20,9 @@ const (
 	DefaultLogLevel = logrus.InfoLevel
 )
 
-// TODO: исправить проброс ошибок из БД и обрабатывать их в HTTP (переписать хэндлер ошибок)
+// TODO: расширито логи скана и отрефакторить там код (распараллелить???)
 // TODO: Написать Swagger-файл
+// TODO: написать dockerfile для приложения и сбилдить образ (не забыть переместить конфиг в /etc/)
 
 // TODO: остается проблема, когда сканы старых добавленных конфигов не стираются из памяти
 // TODO: русский PostgreSQL... Надо доработать regexp на такой случай (???)
@@ -59,14 +60,14 @@ func main() {
 	// Start KubeScanner
 	kubeScanner := kube.NewKubeScanner(
 		storage,
-		config.System.Kubernetes.Timeout,
+		config,
 		logrus.NewEntry(logger).WithField("app", "kube-scanner"),
 	)
 	go kubeScanner.Start(config.ScanDelay)
 	defer kubeScanner.Shutdown()
 
 	// Start httpServer.server
-	server := httpServer.NewHttpServer(storage, logger.WithField("app", "httpServer-server"), config)
+	server := httpServer.NewHttpServer(config, storage, logger.WithField("app", "httpServer-server"))
 	go func() {
 		err := server.ListenAndServe()
 		if err == http.ErrServerClosed {

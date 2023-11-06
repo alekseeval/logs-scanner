@@ -10,15 +10,12 @@ import (
 	"time"
 )
 
-// TODO: унифицировать обработку ошибок записи json
-// TODO: дописать хендлеры на остальные запросы
-
 type HttpServer struct {
 	logger  *logrus.Entry
 	storage kube.StorageI
 }
 
-func NewHttpServer(storage kube.StorageI, loggerEntry *logrus.Entry, cfg *configuration.Config) *http.Server {
+func NewHttpServer(cfg *configuration.Config, storage kube.StorageI, loggerEntry *logrus.Entry) *http.Server {
 	httpServer := HttpServer{
 		logger:  loggerEntry,
 		storage: storage,

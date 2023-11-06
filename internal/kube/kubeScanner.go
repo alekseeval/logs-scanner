@@ -1,18 +1,16 @@
 package kube
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"regexp"
+	"scan_project/configuration"
 	"scan_project/internal/model"
-	"strings"
 	"sync"
 	"time"
 )
@@ -27,11 +25,11 @@ type KubeScanner struct {
 	isRunning         bool
 }
 
-func NewKubeScanner(storage StorageI, KubernetesTimeout *int, logger *logrus.Entry) *KubeScanner {
+func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.Entry) *KubeScanner {
 	// TODO: Проброс из кофига ключевого слова для грепа? error использовать как default?
 	return &KubeScanner{
 		storage:           storage,
-		kubernetesTimeout: KubernetesTimeout,
+		kubernetesTimeout: cfg.System.Kubernetes.Timeout,
 		jobsRegexp:        regexp.MustCompile("(?i)error"),
 		startProcessWg:    sync.WaitGroup{},
 		logger:            logger,
@@ -134,7 +132,7 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 		}
 		switch pod.Status.Phase {
 		case v1.PodRunning:
-			serviceScan, err := ks.ScanServiceLog(kubeClient, &pod)
+			serviceScan, err := ks.scanServiceLog(kubeClient, &pod)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
@@ -143,7 +141,7 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 			}
 			servicesScans = append(servicesScans, *serviceScan)
 		case v1.PodFailed, v1.PodSucceeded:
-			jobScan, err := ks.ScanJobLog(kubeClient, &pod)
+			jobScan, err := ks.scanJobLog(kubeClient, &pod)
 			if err != nil {
 				ks.logger.
 					WithField("error", err).
@@ -154,70 +152,4 @@ func (ks *KubeScanner) ScanNamespace(kubeClient *kubernetes.Clientset, namespace
 		}
 	}
 	return servicesScans, jobsScans, nil
-}
-
-func (ks *KubeScanner) ScanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.Pod) (serviceScan *model.ServiceScan, err error) {
-	serviceScan = &model.ServiceScan{
-		ServiceName:     pod.Name,
-		LogTypeCountMap: make(map[model.LogLevelType]int),
-	}
-	serviceScan.ServiceName = pod.Name
-	serviceScan.RestartsCount = 0 // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
-	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time)
-	podLogOpts := &v1.PodLogOptions{}
-	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
-	podLogsStream, err := req.Stream(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-	defer podLogsStream.Close()
-	scanner := bufio.NewScanner(podLogsStream)
-	linesCount := 0
-	for scanner.Scan() {
-		linesCount++
-		log := &model.CommonServiceLog{}
-		err := json.Unmarshal(scanner.Bytes(), log)
-		if err != nil {
-			serviceScan.NoneJsonLinesCount++
-			continue
-		}
-		switch log.Level {
-		case model.Trace, model.Debug, model.Info, model.Warning, model.Error, model.Fatal:
-			serviceScan.LogTypeCountMap[log.Level] += 1
-		default:
-			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", log.Level))
-		}
-	}
-	serviceScan.TotalLines = linesCount
-	serviceScan.ScanFinishTime = time.Now()
-	return serviceScan, nil
-}
-
-func (ks *KubeScanner) ScanJobLog(kubeClient *kubernetes.Clientset, pod *v1.Pod) (*model.JobScan, error) {
-	podLogOpts := &v1.PodLogOptions{}
-	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
-	podLogsStream, err := req.Stream(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-	defer podLogsStream.Close()
-	var sb strings.Builder
-	matchedLogRows := make([]string, 0)
-	scanner := bufio.NewScanner(podLogsStream)
-	for scanner.Scan() {
-		strokeText := scanner.Text()
-		if ks.jobsRegexp.MatchString(strokeText) {
-			matchedLogRows = append(matchedLogRows, strokeText)
-		}
-		sb.WriteString(scanner.Text())
-		sb.WriteRune('\n')
-	}
-	return &model.JobScan{
-		JobName:        pod.Name,
-		Age:            time.Now().Sub(pod.CreationTimestamp.Time),
-		FullLog:        sb.String(),
-		GrepPattern:    *ks.jobsRegexp,
-		GrepLog:        matchedLogRows,
-		ScanFinishTime: time.Now(),
-	}, nil
 }
