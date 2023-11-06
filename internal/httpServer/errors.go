@@ -6,9 +6,18 @@ import (
 	"scan_project/internal/model"
 )
 
-func (s *HttpServer) handleError(w http.ResponseWriter, serverError model.ServerError) {
+func (s *HttpServer) writeErrorResponse(w http.ResponseWriter, externalErr error) {
 	w.WriteHeader(http.StatusBadRequest)
-	err := json.NewEncoder(w).Encode(serverError)
+	var err error
+	switch externalErr.(type) {
+	case *model.ServerError:
+		err = json.NewEncoder(w).Encode(externalErr)
+	default:
+		err = json.NewEncoder(w).Encode(model.ServerError{
+			Code:        model.InternalServerError,
+			Description: err.Error(),
+		})
+	}
 	if err != nil {
 		s.logger.
 			WithField("error", err).

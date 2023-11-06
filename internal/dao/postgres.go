@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"scan_project/configuration"
 	"scan_project/internal/model"
+	"strconv"
 )
 
 // PostgresDB is struct which implements kube.ClusterDAOI interface and provides access to PostgresSQL DB
@@ -54,7 +55,7 @@ func (p *PostgresDB) AddCluster(cluster *model.Cluster) (*model.Cluster, error) 
 	var kcv clusterView
 	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToCluster(), err
+	return kcv.convertToCluster(), p.convertDbErrorToInternal(err)
 }
 
 func (p *PostgresDB) GetClusterByName(clusterName string) (*model.Cluster, error) {
@@ -64,20 +65,23 @@ func (p *PostgresDB) GetClusterByName(clusterName string) (*model.Cluster, error
 	var kcv clusterView
 	err := row.StructScan(&kcv)
 	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToCluster(), err
+	return kcv.convertToCluster(), p.convertDbErrorToInternal(err)
 }
 
-// EditKubeConfig change cluster config only
+// EditClusterConfig change cluster config only
 //
 //	To change namespaces list where AddNamespaceToCluster and DeleteNamespaceFromCluster methods
 func (p *PostgresDB) EditClusterConfig(clusterName string, clusterConfig string) (*model.Cluster, error) {
 	queryRow := `SELECT * FROM edit_cluster($1, $2)`
 	queryParams := []interface{}{clusterName, clusterConfig}
+	p.logDBRequest(queryRow, queryParams)
 	row := p.db.QueryRowx(queryRow, queryParams...)
 	var kcv clusterView
 	err := row.StructScan(&kcv)
-	p.logDBRequest(queryRow, queryParams)
-	return kcv.convertToCluster(), err
+	if err != nil {
+		return nil, p.convertDbErrorToInternal(err)
+	}
+	return kcv.convertToCluster(), nil
 }
 
 func (p *PostgresDB) DeleteCluster(clusterName string) error {
@@ -85,7 +89,7 @@ func (p *PostgresDB) DeleteCluster(clusterName string) error {
 	queryParams := []interface{}{clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
-	return err
+	return p.convertDbErrorToInternal(err)
 }
 
 func (p *PostgresDB) GetAllClusters() ([]model.Cluster, error) {
@@ -104,7 +108,7 @@ func (p *PostgresDB) GetAllClusters() ([]model.Cluster, error) {
 		}
 		allConfigs = append(allConfigs, *kcv.convertToCluster())
 	}
-	return allConfigs, err
+	return allConfigs, p.convertDbErrorToInternal(err)
 }
 
 func (p *PostgresDB) AddNamespaceToCluster(clusterName string, namespaceName string) error {
@@ -112,7 +116,7 @@ func (p *PostgresDB) AddNamespaceToCluster(clusterName string, namespaceName str
 	queryParams := []interface{}{namespaceName, clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
-	return err
+	return p.convertDbErrorToInternal(err)
 }
 
 func (p *PostgresDB) DeleteNamespaceFromCluster(clusterName string, namespaceName string) error {
@@ -120,7 +124,7 @@ func (p *PostgresDB) DeleteNamespaceFromCluster(clusterName string, namespaceNam
 	queryParams := []interface{}{namespaceName, clusterName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
-	return err
+	return p.convertDbErrorToInternal(err)
 }
 
 // logDBRequest write to log information about request. Method uses slog entry from PostgresDB struct
@@ -129,4 +133,23 @@ func (p *PostgresDB) logDBRequest(queryRow string, queryParams interface{}) {
 		"params": queryParams,
 		"query":  queryRow,
 	}).Info("db query")
+}
+
+func (p *PostgresDB) convertDbErrorToInternal(dbError error) error {
+	if dbError == nil {
+		return dbError
+	}
+	if pqErr, ok := dbError.(*pq.Error); ok {
+		errCode, err := strconv.Atoi(pqErr.SQLState())
+		if err == nil {
+			return &model.ServerError{
+				Code:        errCode,
+				Description: dbError.Error(),
+			}
+		}
+	}
+	return &model.ServerError{
+		Code:        model.UnknownDBError,
+		Description: dbError.Error(),
+	}
 }
