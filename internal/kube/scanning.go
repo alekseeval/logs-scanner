@@ -18,7 +18,12 @@ func (ks *KubeScanner) scanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 		LogTypeCountMap: make(map[model.LogLevelType]int),
 	}
 	serviceScan.ServiceName = pod.Name
-	serviceScan.RestartsCount = 0 // TODO: нужно выцеплять из состояния контейнера внутри пода.. Надо ли оно?
+	// Use first pod container, to get restarts count
+	var restartCount int
+	if len(pod.Status.ContainerStatuses) != 0 {
+		restartCount = int(pod.Status.ContainerStatuses[0].RestartCount)
+	}
+	serviceScan.RestartsCount = restartCount
 	serviceScan.Uptime = time.Now().Sub(pod.CreationTimestamp.Time)
 	podLogOpts := &v1.PodLogOptions{}
 	req := kubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, podLogOpts)
