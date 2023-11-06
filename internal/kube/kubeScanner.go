@@ -30,7 +30,7 @@ func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.
 	return &KubeScanner{
 		storage:           storage,
 		kubernetesTimeout: cfg.System.Kubernetes.Timeout,
-		jobsRegexp:        regexp.MustCompile("(?i)error"),
+		jobsRegexp:        regexp.MustCompile("(?i)error|(?i)ошибка"),
 		startProcessWg:    sync.WaitGroup{},
 		logger:            logger,
 		stopChan:          make(chan struct{}, 1),
