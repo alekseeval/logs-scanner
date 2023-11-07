@@ -8,12 +8,12 @@ import (
 type LogLevelType string
 
 const (
-	Trace   LogLevelType = "trace"
-	Info    LogLevelType = "info"
-	Debug   LogLevelType = "debug"
-	Warning LogLevelType = "warning"
-	Error   LogLevelType = "error"
-	Fatal   LogLevelType = "fatal"
+	Trace   string = "trace"
+	Info    string = "info"
+	Debug   string = "debug"
+	Warning string = "warning"
+	Error   string = "error"
+	Fatal   string = "fatal"
 )
 
 type Cluster struct {
@@ -23,13 +23,13 @@ type Cluster struct {
 }
 
 type ServiceScan struct {
-	ServiceName        string               `json:"service_name"`
-	Uptime             time.Duration        `json:"uptime"`
-	RestartsCount      int                  `json:"restarts_count"`
-	LogTypeCountMap    map[LogLevelType]int `json:"logs_info"`
-	NoneJsonLinesCount int                  `json:"none_json_lines_count"`
-	TotalLines         int                  `json:"total_lines"`
-	ScanFinishTime     time.Time            `json:"scan_finish_time"`
+	ServiceName        string         `json:"service_name"`
+	Uptime             time.Duration  `json:"uptime"`
+	RestartsCount      int            `json:"restarts_count"`
+	LogTypeCountMap    map[string]int `json:"logs_info"`
+	NoneJsonLinesCount int            `json:"none_json_lines_count"`
+	TotalLines         int            `json:"total_lines"`
+	ScanFinishTime     time.Time      `json:"scan_finish_time"`
 }
 
 type JobScan struct {

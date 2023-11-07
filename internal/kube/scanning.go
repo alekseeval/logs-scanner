@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes"
 	"scan_project/internal/model"
 	"strings"
@@ -16,7 +15,7 @@ func (ks *KubeScanner) scanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 	// Init pod common data into Scan struct
 	serviceScan = &model.ServiceScan{
 		ServiceName:     pod.Name,
-		LogTypeCountMap: make(map[model.LogLevelType]int),
+		LogTypeCountMap: make(map[string]int),
 		Uptime:          time.Now().Sub(pod.CreationTimestamp.Time),
 	}
 	var restartCount int
@@ -36,17 +35,25 @@ func (ks *KubeScanner) scanServiceLog(kubeClient *kubernetes.Clientset, pod *v1.
 	linesCount := 0
 	for scanner.Scan() {
 		linesCount++
-		log := &model.CommonServiceLog{}
-		err := json.Unmarshal(scanner.Bytes(), log)
-		if err != nil {
+		logBytes := scanner.Bytes()
+		foundLevelBytes := ks.servicesRegexp.FindSubmatch(logBytes)
+		if foundLevelBytes == nil {
 			serviceScan.NoneJsonLinesCount++
 			continue
 		}
-		switch log.Level {
+		if len(foundLevelBytes) != 1 {
+			ks.logger.
+				WithField("log", string(logBytes)).
+				Warning("Several \"level\" key founds in log")
+			continue
+		}
+		foundLevelStr := string(foundLevelBytes[0])
+		level := foundLevelStr[9 : len(foundLevelStr)-1]
+		switch level {
 		case model.Trace, model.Debug, model.Info, model.Warning, model.Error, model.Fatal:
-			serviceScan.LogTypeCountMap[log.Level] += 1
+			serviceScan.LogTypeCountMap[level] += 1
 		default:
-			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", log.Level))
+			ks.logger.Warning(fmt.Sprintf("Unknown log level -- %s", level))
 		}
 	}
 	serviceScan.TotalLines = linesCount

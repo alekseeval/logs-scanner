@@ -23,6 +23,7 @@ type KubeScanner struct {
 	startProcessWg    sync.WaitGroup
 	jobsRegexp        *regexp.Regexp
 	isRunning         bool
+	servicesRegexp    *regexp.Regexp
 }
 
 func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.Entry) *KubeScanner {
@@ -34,6 +35,7 @@ func NewKubeScanner(storage StorageI, cfg *configuration.Config, logger *logrus.
 		logger:            logger,
 		stopChan:          make(chan struct{}, 1),
 		isRunning:         false,
+		servicesRegexp:    regexp.MustCompile("\"level\":\"\\w+\""),
 	}
 }
 
