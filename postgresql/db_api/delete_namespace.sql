@@ -12,12 +12,12 @@ BEGIN
     if coalesce(p_cluster_name, '') = '' then
         RAISE SQLSTATE '80002' USING message = 'empty cluster_name parameter provided';
     end if;
-    if not EXISTS(select id from kube.clusters where name=p_kc_name) then
+    if not EXISTS(select id from kube.clusters where name=p_namespace) then
         RAISE SQLSTATE '80003' USING message = 'no such cluster';
     end if;
 
     DELETE FROM kube.namespaces
-    WHERE name=p_namespace and kc_name=p_cluster_name
+    WHERE name=p_namespace and cluster_name=p_cluster_name
     RETURNING id INTO r_id;
 
     if r_id is null then
