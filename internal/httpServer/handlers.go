@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"scan_project/internal/model"
+	"slices"
 )
 
 func (s *HttpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
@@ -20,8 +21,17 @@ func (s *HttpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorResponse(w, model.NewServerErrorByCode(model.NoNamespaceProvided))
 		return
 	}
+	cluster, err := s.storage.GetClusterByName(clusterName)
+	if err != nil {
+		s.writeErrorResponse(w, err)
+		return
+	}
+	if !slices.Contains(cluster.Namespaces, namespace) {
+		s.writeErrorResponse(w, model.NewServerErrorByCode(model.NoSuchNamespaceInCluster))
+		return
+	}
 	jobsScans := s.storage.GetJobsScans(clusterName, namespace)
-	err := json.NewEncoder(w).Encode(jobsScans)
+	err = json.NewEncoder(w).Encode(jobsScans)
 	if err != nil {
 		s.writeErrorResponse(w, err)
 		return
@@ -41,8 +51,17 @@ func (s *HttpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorResponse(w, model.NewServerErrorByCode(model.NoNamespaceProvided))
 		return
 	}
+	cluster, err := s.storage.GetClusterByName(clusterName)
+	if err != nil {
+		s.writeErrorResponse(w, err)
+		return
+	}
+	if !slices.Contains(cluster.Namespaces, namespace) {
+		s.writeErrorResponse(w, model.NewServerErrorByCode(model.NoSuchNamespaceInCluster))
+		return
+	}
 	servicesScans := s.storage.GetServicesScans(clusterName, namespace)
-	err := json.NewEncoder(w).Encode(servicesScans)
+	err = json.NewEncoder(w).Encode(servicesScans)
 	if err != nil {
 		s.writeErrorResponse(w, err)
 		return

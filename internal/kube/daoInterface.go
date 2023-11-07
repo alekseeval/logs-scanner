@@ -18,10 +18,10 @@ type ScansDAOI interface {
 }
 
 type kubeConfigDAOI interface {
-	AddCluster(kubeConfig *model.Cluster) (*model.Cluster, error)
-	GetClusterByName(kubeConfigName string) (*model.Cluster, error)
-	EditClusterConfig(clusterName string, kubeconfig string) (*model.Cluster, error)
-	DeleteCluster(kubeConfigName string) error
+	AddCluster(cluster *model.Cluster) (*model.Cluster, error)
+	GetClusterByName(clusterName string) (*model.Cluster, error)
+	EditClusterConfig(clusterName string, kubeConfig string) (*model.Cluster, error)
+	DeleteCluster(clusterName string) error
 	GetAllClusters() ([]model.Cluster, error)
 }
 
