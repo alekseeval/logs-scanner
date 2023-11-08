@@ -9,6 +9,7 @@ import (
 	"scan_project/configuration"
 	"scan_project/internal/model"
 	"strconv"
+	"time"
 )
 
 // PostgresDB is struct which implements kube.ClusterDAOI interface and provides access to PostgresSQL DB
@@ -39,6 +40,10 @@ func NewPostgresDB(config *configuration.Config, logger *logrus.Entry) (*Postgre
 	connStr := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s connect_timeout=%d",
 		dbConfig.User, dbConfig.Password, dbConfig.Ip, dbConfig.Port, dbConfig.DbName, dbConfig.Timeout)
 	db, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	db.SetConnMaxLifetime(time.Duration(config.System.Postgres.Timeout) * time.Second)
 	return &PostgresDB{
 		db:     db,
 		logger: logger,
