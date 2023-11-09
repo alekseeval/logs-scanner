@@ -1,9 +1,350 @@
-openapi: 3.0.3
+openapi: 3.0.1
 info:
-  title: Title
-  description: Title
   version: 1.0.0
+  title: Logs Scanner API
+tags:
+  - name: Clusters
+  - name: Namespaces
+  - name: Scans
 servers:
-  - url: 'https'
+  - url: 'http://localhost:50000'
+  - url: 'http://localhost:8080'
+
 paths:
-  
+  /api/v1/clusters:
+    post:
+      summary: Add cluster
+      operationId: servicesScans
+      tags:
+        - Clusters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterCreate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFull'
+        '400':
+          description: Something went wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List all clusters
+      operationId: servicesScans
+      tags:
+        - Clusters
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClusterFull'
+        '400':
+          description: Something went wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}:
+    get:
+      summary: Get cluster info
+      operationId: getCluster
+      tags:
+        - Clusters
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFull'
+        '400':
+          description: Something went wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete cluster from DB
+      operationId: deleteCluster
+      tags:
+        - Clusters
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Something went wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}/config:
+    patch:
+      summary: Change cluster kubernetes config-file
+      operationId: patchClusterConfig
+      tags:
+        - Clusters
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterUpdate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFull'
+        '400':
+          description: Something went wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}/namespaces:
+    post:
+      summary: Add namespace to cluster
+      operationId: addNamespace
+      tags:
+        - Namespaces
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceAdd'
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}/namespaces/{namespace}:
+    delete:
+      summary: Delete namespace from cluster
+      operationId: deleteNamespace
+      tags:
+        - Namespaces
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+        - $ref: '#/components/parameters/Namespace'
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}/namespaces/{namespace}/services-scans:
+    get:
+      summary: Get running services scans
+      operationId: servicesScans
+      tags:
+        - Scans
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+        - $ref: '#/components/parameters/Namespace'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceScan'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/clusters/{cluster}/namespaces/{namespace}/jobs-scans:
+    get:
+      summary: Get jobs scans
+      operationId: servicesScans
+      tags:
+        - Scans
+      parameters:
+        - $ref: '#/components/parameters/Cluster name'
+        - $ref: '#/components/parameters/Namespace'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobScan'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    Cluster name:
+      name: cluster
+      in: path
+      description: Cluster name
+      required: true
+      schema:
+        type: string
+        example: casteam
+    Namespace:
+      name: namespace
+      in: path
+      description: Namespace of cluster
+      required: true
+      schema:
+        type: string
+        example: alekseev-cas-6
+
+  schemas:
+    Error:
+      description: Error response
+      properties:
+        code:
+          description: Error code
+          type: integer
+        description:
+          description: Error description
+          type: string
+
+    ClusterFull:
+      description: Cluster info
+      allOf:
+        - $ref: '#/components/schemas/ClusterCreate'
+      properties:
+        namespaces:
+          description: List of namespaces in cluster
+          type: array
+          items:
+            type: string
+
+    ClusterCreate:
+      description: Cluster info
+      allOf:
+        - $ref: '#/components/schemas/ClusterUpdate'
+      properties:
+        name:
+          description: Name of cluster
+          type: string
+
+    ClusterUpdate:
+      description: Cluster info
+      properties:
+        config:
+          description: One line yaml kubernetes config-file
+          type: string
+
+    NamespaceAdd:
+      description: Namespace
+      properties:
+        namespace:
+          description: Namespace of cluster
+          type: string
+
+    JobScan:
+      description: Result of job scan
+      properties:
+        job_name:
+          description: Name of the pod
+          type: string
+        age:
+          description: Time elapsed since the creation of the pod (nanoseconds)
+          type: integer
+          format: int64
+        full_log:
+          description: Full job log
+          type: string
+        grep_pattern:
+          description: Regexp which been used to find errors in full log
+          type: string
+        grep_log:
+          description: The log rows which match grep_pattern
+          type: array
+          items:
+            type: string
+        scan_finish_time:
+          description: Datetime when scan was finished
+          type: string
+          example: '2023-11-09T22:25:47.531151177+03:00'
+
+    ServiceScan:
+      description: Result of services scans
+      properties:
+        service_name:
+          description: Name of the pod
+          type: string
+        uptime:
+          description: Time elapsed since the creation of the pod (nanoseconds)
+          type: integer
+          format: int64
+        restarts_count:
+          description: Restarts count of first container in pod
+          type: integer
+        logs_info:
+          $ref: '#/components/schemas/LogLevelsCountMap'
+        none_json_lines_count:
+          description: Count of log rows which has not json-format
+          type: integer
+        total_lines:
+          description: Total number of rows in log
+          type: integer
+        scan_finish_time:
+          description: Datetime when scan was finished
+          type: string
+          example: '2023-11-09T22:25:47.531151177+03:00'
+
+    LogLevelsCountMap:
+      description: Number of log entries at different logging levels
+      properties:
+        trace:
+          type: integer
+          nullable: true
+        debug:
+          type: integer
+          nullable: true
+        info:
+          type: integer
+          nullable: true
+        warning:
+          type: integer
+          nullable: true
+        error:
+          type: integer
+          nullable: true
+        fatal:
+          type: integer
+          nullable: true
