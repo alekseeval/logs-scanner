@@ -14,7 +14,7 @@ paths:
   /api/v1/clusters:
     post:
       summary: Add cluster
-      operationId: servicesScans
+      operationId: postCluster
       tags:
         - Clusters
       requestBody:
@@ -37,7 +37,7 @@ paths:
                 $ref: '#/components/schemas/Error'
     get:
       summary: List all clusters
-      operationId: servicesScans
+      operationId: getClustersList
       tags:
         - Clusters
       responses:
@@ -166,7 +166,7 @@ paths:
   /api/v1/clusters/{cluster}/namespaces/{namespace}/services-scans:
     get:
       summary: Get running services scans
-      operationId: servicesScans
+      operationId: getServicesScans
       tags:
         - Scans
       parameters:
@@ -189,7 +189,7 @@ paths:
   /api/v1/clusters/{cluster}/namespaces/{namespace}/jobs-scans:
     get:
       summary: Get jobs scans
-      operationId: servicesScans
+      operationId: getJobsScans
       tags:
         - Scans
       parameters:
