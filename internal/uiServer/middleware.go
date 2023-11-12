@@ -1,10 +1,8 @@
-package httpServer
+package staticServer
 
-import (
-	"net/http"
-)
+import "net/http"
 
-func (s *httpServer) loggingMiddleware(next http.Handler) http.Handler {
+func (s *fileServer) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.logger.
 			WithField("uri", r.URL.Path).

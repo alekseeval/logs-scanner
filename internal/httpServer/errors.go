@@ -6,7 +6,7 @@ import (
 	"scan_project/internal/model"
 )
 
-func (s *HttpServer) writeErrorResponse(w http.ResponseWriter, externalErr error) {
+func (s *httpServer) writeErrorResponse(w http.ResponseWriter, externalErr error) {
 	w.WriteHeader(http.StatusBadRequest)
 	var err error
 	switch externalErr.(type) {

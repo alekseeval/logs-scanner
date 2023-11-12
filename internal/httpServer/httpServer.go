@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-type HttpServer struct {
+type httpServer struct {
 	logger  *logrus.Entry
 	storage kube.StorageI
 }
 
 func NewHttpServer(cfg *configuration.Config, storage kube.StorageI, loggerEntry *logrus.Entry) *http.Server {
-	httpServer := HttpServer{
+	httpServer := httpServer{
 		logger:  loggerEntry,
 		storage: storage,
 	}

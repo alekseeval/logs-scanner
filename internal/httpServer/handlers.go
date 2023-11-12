@@ -8,7 +8,7 @@ import (
 	"slices"
 )
 
-func (s *HttpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -38,7 +38,7 @@ func (s *HttpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HttpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -68,7 +68,7 @@ func (s *HttpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HttpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	clusters, err := s.storage.GetAllClusters()
 	if err != nil {
@@ -82,7 +82,7 @@ func (s *HttpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HttpServer) getCluster(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -102,7 +102,7 @@ func (s *HttpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HttpServer) createCluster(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) createCluster(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var cluster model.Cluster
 	err := json.NewDecoder(r.Body).Decode(&cluster)
@@ -122,7 +122,7 @@ func (s *HttpServer) createCluster(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HttpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -138,7 +138,7 @@ func (s *HttpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *HttpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -160,7 +160,7 @@ func (s *HttpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *HttpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
@@ -181,7 +181,7 @@ func (s *HttpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *HttpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
