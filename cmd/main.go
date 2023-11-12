@@ -17,13 +17,11 @@ import (
 )
 
 const (
-	pathToConfig               = "/home/reserv/GolandProjects/LogScan/config.json"
+	pathToConfig               = "/etc/scanner/config.json"
 	DefaultLogLevel            = logrus.InfoLevel
 	HttpServerShutdownTimeout  = 5 * time.Second
 	KubeScannerShutdownTimeout = 20 * time.Second
 )
-
-// TODO: написать dockerfile для приложения и сбилдить образ (не забыть переместить конфиг в /etc/)
 
 func main() {
 
