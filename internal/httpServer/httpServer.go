@@ -21,7 +21,8 @@ func NewHttpServer(cfg *configuration.Config, storage kube.StorageI, loggerEntry
 		storage: storage,
 	}
 	r := mux.NewRouter()
-	r.Use(httpServer.loggingMiddleware)
+	r.Use(httpServer.loggingMiddleware) // Log request
+	r.Use(setResponseHeadersMiddleware) // set CORS and Content-Type headers
 	// Clusters
 	r.HandleFunc("/api/v1/clusters", httpServer.getAllClusters).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/clusters/{cluster}", httpServer.getCluster).Methods(http.MethodGet)

@@ -9,7 +9,6 @@ import (
 )
 
 func (s *httpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -39,7 +38,6 @@ func (s *httpServer) getJobsScans(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -69,7 +67,6 @@ func (s *httpServer) getServicesScans(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	clusters, err := s.storage.GetAllClusters()
 	if err != nil {
 		s.writeErrorResponse(w, err)
@@ -83,7 +80,6 @@ func (s *httpServer) getAllClusters(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) getCluster(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -103,7 +99,6 @@ func (s *httpServer) getCluster(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) createCluster(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	var cluster model.Cluster
 	err := json.NewDecoder(r.Body).Decode(&cluster)
 	if err != nil {
@@ -123,7 +118,6 @@ func (s *httpServer) createCluster(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -139,7 +133,6 @@ func (s *httpServer) deleteCluster(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -161,7 +154,6 @@ func (s *httpServer) addNamespace(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
@@ -182,7 +174,6 @@ func (s *httpServer) deleteNamespace(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) changeClusterConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	clusterName, ok := vars["cluster"]
 	if !ok {
