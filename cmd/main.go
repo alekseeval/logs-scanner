@@ -11,6 +11,7 @@ import (
 	"scan_project/internal/dao"
 	"scan_project/internal/httpServer"
 	"scan_project/internal/kube"
+	"scan_project/internal/uiServer"
 	"syscall"
 	"time"
 )
@@ -19,14 +20,10 @@ const (
 	pathToConfig               = "/home/reserv/GolandProjects/LogScan/config.json"
 	DefaultLogLevel            = logrus.InfoLevel
 	HttpServerShutdownTimeout  = 5 * time.Second
-	KubeScannerShutdownTimeout = 10 * time.Second
+	KubeScannerShutdownTimeout = 20 * time.Second
 )
 
-// TODO: Написать Swagger-файл
 // TODO: написать dockerfile для приложения и сбилдить образ (не забыть переместить конфиг в /etc/)
-
-// TODO: остается проблема, когда сканы старых добавленных конфигов не стираются из памяти
-// TODO: русский PostgreSQL... Надо доработать regexp на такой случай (???)
 
 func main() {
 
@@ -102,6 +99,29 @@ func main() {
 			logger.
 				WithField("error", err).
 				Error("Failed to shutdown the HTTP Server gracefully")
+		}
+	}(server)
+
+	// Start static UI server
+	staticServer := uiServer.NewUIServer(config, logger.WithField("app", "ui-static-server"))
+	go func() {
+		err := staticServer.ListenAndServe()
+		if err == http.ErrServerClosed {
+			logger.Info("UI static HTTP server was closed")
+		} else {
+			logger.
+				WithField("error", err).
+				Error("Failed to start the HTTP UI static server")
+		}
+	}()
+	defer func(staticServer *http.Server) {
+		ctx, ctxCancel := context.WithTimeout(context.Background(), HttpServerShutdownTimeout)
+		defer ctxCancel()
+		err := staticServer.Shutdown(ctx)
+		if err != nil {
+			logger.
+				WithField("error", err).
+				Error("Failed to shutdown the UI static HTTP Server gracefully")
 		}
 	}(server)
 

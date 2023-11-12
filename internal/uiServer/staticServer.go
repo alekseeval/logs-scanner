@@ -1,4 +1,4 @@
-package staticServer
+package uiServer
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 	"time"
 )
 
-type fileServer struct {
+type uiServer struct {
 	logger *logrus.Entry
 }
 
-func NewFileServer(cfg configuration.Config, logger *logrus.Entry) *http.Server {
-	staticServer := fileServer{
+func NewUIServer(cfg *configuration.Config, logger *logrus.Entry) *http.Server {
+	staticServer := uiServer{
 		logger: logger,
 	}
 	r := mux.NewRouter()

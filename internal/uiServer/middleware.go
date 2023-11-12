@@ -1,8 +1,8 @@
-package staticServer
+package uiServer
 
 import "net/http"
 
-func (s *fileServer) loggingMiddleware(next http.Handler) http.Handler {
+func (s *uiServer) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.logger.
 			WithField("uri", r.URL.Path).
