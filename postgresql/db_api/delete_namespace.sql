@@ -12,7 +12,7 @@ BEGIN
     if coalesce(p_cluster_name, '') = '' then
         RAISE SQLSTATE '80002' USING message = 'empty cluster_name parameter provided';
     end if;
-    if not EXISTS(select id from kube.clusters where name=p_namespace) then
+    if not EXISTS(select id from kube.clusters where name=p_cluster_name) then
         RAISE SQLSTATE '80003' USING message = 'no such cluster';
     end if;
 
