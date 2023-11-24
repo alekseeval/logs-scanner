@@ -126,7 +126,7 @@ func (p *PostgresDB) AddNamespaceToCluster(clusterName string, namespaceName str
 
 func (p *PostgresDB) DeleteNamespaceFromCluster(clusterName string, namespaceName string) error {
 	queryRow := `SELECT * FROM delete_namespace($1, $2)`
-	queryParams := []interface{}{namespaceName, clusterName}
+	queryParams := []interface{}{clusterName, namespaceName}
 	_, err := p.db.Exec(queryRow, queryParams...)
 	p.logDBRequest(queryRow, queryParams)
 	return p.convertDbErrorToInternal(err)
