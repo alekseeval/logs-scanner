@@ -262,7 +262,7 @@ components:
       description: Cluster info
       properties:
         config:
-          description: One line yaml kubernetes config-file
+          description: One line base64 kubernetes config-file. To generate which use command "base64 {CONFIG_FILE} -w 0"
           type: string
 
     NamespaceAdd:

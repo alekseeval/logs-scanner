@@ -16,7 +16,7 @@ bash db/check_install.sh
 18 |  postgres_password='postgres'
 19 |  db_admin='admin'
 20 |  db_admin_password='admin'
-21 |  db_name="tools"
+21 |  db_name="tool_db"
 ```
 Либо можно задать соответствующие переменные окружения (upper case) и запустить скрипт:
 ```bash
@@ -26,7 +26,7 @@ export POSTGRES='postgres'
 export POSTGRES_PASSWORD='postgres'
 export DB_ADMIN='admin'
 export DB_ADMIN_PASSWORD='admin'
-export DB_NAME="tools"
+export DB_NAME="tool_db"
 ```
 
 > Переменные окружения, если они установлены, считаются более приоритетными
@@ -43,21 +43,17 @@ export DB_NAME="tools"
 ### Локальная сборка образа приложения
 Для локальной сборки образа приложения достаточно использовать команду ниже, в корне проекта:
 ```bash
-docker build -t alekseeval/testing-toools:X.X.X .
+docker build -t alekseeval/logs-scanner:X.Y.Z .
 ```
 
 ### Запуск приложения
 Пример команды запуска приложения:
 ```bash
-docker run --network host -d --name testing_tools alekseeval/testing-toools:1.0.0
+docker run --network host -d --name logs-scanner alekseeval/logs-scanner:X.Y.Z
 ```
-Ссылка на репозиторий с образами приложения -- https://hub.docker.com/r/alekseeval/testing-toools/tags
+Ссылка на репозиторий с образами приложения -- https://hub.docker.com/r/alekseeval/logs-scanner/tags
 
 ### Конфигурация приложения
 Конфигурационный файл приложения должен называться `config.json` и располагаться по пути `/etc/scanner/config.json`
 
-UI сервер автоматически стартует на порту `:8080`
-
 Порт REST API приложения задается в конфигурации -- `system.http.port`. Интерфейс REST API приложения описан в swagger-спецификации, в файле `/swagger/docs-swagger.yaml`
-
-Так же, swagger-спецификацию запущенного приложения можно открыть по uri `/swagger/`
