@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -81,7 +82,7 @@ func main() {
 	server := httpServer.NewHttpServer(config, storage, logger.WithField("app", "httpServer-server"))
 	go func() {
 		err := server.ListenAndServe()
-		if err == http.ErrServerClosed {
+		if errors.Is(err, http.ErrServerClosed) {
 			logger.Info("Http server was closed")
 		} else {
 			logger.
@@ -104,7 +105,7 @@ func main() {
 	staticServer := uiServer.NewUIServer(config, logger.WithField("app", "ui-static-server"))
 	go func() {
 		err := staticServer.ListenAndServe()
-		if err == http.ErrServerClosed {
+		if errors.Is(err, http.ErrServerClosed) {
 			logger.Info("UI static HTTP server was closed")
 		} else {
 			logger.

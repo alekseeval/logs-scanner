@@ -6,9 +6,6 @@ tags:
   - name: Clusters
   - name: Namespaces
   - name: Scans
-servers:
-  - url: 'http://192.168.12.26:50000'
-  - url: 'http://localhost:50000'
 
 paths:
   /api/v1/clusters:
