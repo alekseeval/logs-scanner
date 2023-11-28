@@ -2,6 +2,7 @@ package kube
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -128,7 +129,15 @@ func (ks *KubeScanner) ScanNamespace(cluster model.Cluster, namespace string) er
 		return fmt.Errorf("service was stopped, abort all scans")
 	}
 	// Init kubernetes REST
-	kubeRest, err := clientcmd.RESTConfigFromKubeConfig([]byte(cluster.Config))
+	kubeConfigBytes, err := base64.StdEncoding.DecodeString(cluster.Config)
+	if err != nil {
+		ks.logger.
+			WithField("error", err).
+			WithField("kube-config", cluster.Config).
+			Error("Failed to decode kube-config")
+		return err
+	}
+	kubeRest, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigBytes)
 	if err != nil {
 		ks.logger.
 			WithField("error", err).
