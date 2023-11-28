@@ -1,3 +1,23 @@
+# О приложении
+### Локальная сборка образа приложения
+Для локальной сборки образа приложения достаточно использовать команду ниже, в корне проекта:
+```bash
+docker build -t alekseeval/logs-scanner:X.Y.Z .
+```
+
+### Запуск приложения
+Пример команды запуска приложения:
+```bash
+docker run --network host -d --name logs-scanner alekseeval/logs-scanner:X.Y.Z
+```
+Ссылка на репозиторий с образами приложения -- https://hub.docker.com/r/alekseeval/logs-scanner/tags
+
+### Конфигурация приложения
+Конфигурационный файл приложения должен называться `config.json` и располагаться по пути `/etc/scanner/config.json`
+
+Порт REST API приложения задается в конфигурации -- `system.http.port`. Интерфейс REST API приложения описан в swagger-спецификации, в файле `/swagger/docs-swagger.yaml`
+
+
 # Развертывание БД
 В этом разделе описано как можно самостоятельно развернуть PostgreSQL БД для проекта
 
@@ -38,22 +58,3 @@ export DB_NAME="tool_db"
 БД можно развернуть запустив Docker-контейнер и передав в него переменные окружения описанные выше.
 
 Ссылка на образ в Docker Hub - TODO: сделать сборку и выложить куда-либо
-
-# О приложении
-### Локальная сборка образа приложения
-Для локальной сборки образа приложения достаточно использовать команду ниже, в корне проекта:
-```bash
-docker build -t alekseeval/logs-scanner:X.Y.Z .
-```
-
-### Запуск приложения
-Пример команды запуска приложения:
-```bash
-docker run --network host -d --name logs-scanner alekseeval/logs-scanner:X.Y.Z
-```
-Ссылка на репозиторий с образами приложения -- https://hub.docker.com/r/alekseeval/logs-scanner/tags
-
-### Конфигурация приложения
-Конфигурационный файл приложения должен называться `config.json` и располагаться по пути `/etc/scanner/config.json`
-
-Порт REST API приложения задается в конфигурации -- `system.http.port`. Интерфейс REST API приложения описан в swagger-спецификации, в файле `/swagger/docs-swagger.yaml`
