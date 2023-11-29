@@ -32,10 +32,12 @@ type namespaceDAOI interface {
 
 type jobsScanDAOI interface {
 	GetJobsScans(clusterName string, namespace string) []model.JobScan
+	ClearJobsScans(clusterName string, namespace string)
 	UpdateJobsScans(clusterName string, namespace string, jobsScans []model.JobScan) error
 }
 
 type servicesScanDAOI interface {
 	GetServicesScans(clusterName string, namespace string) []model.ServiceScan
+	ClearServicesScans(clusterName string, namespace string)
 	UpdateServicesScans(clusterName string, namespace string, servicesScans []model.ServiceScan) error
 }
