@@ -30,15 +30,13 @@ type daoKey struct {
 }
 
 func (sd *ScansDao) GetJobsScans(clusterName string, namespace string) []model.JobScan {
-	sd.logger.
-		WithField("params", []string{clusterName, namespace}).
-		Debug("Get jobs scans")
 	sd.jMutex.RLock()
+	defer sd.jMutex.RUnlock()
+	sd.logRequest([]string{clusterName, namespace}, "Get jobs scans", nil)
 	scans := sd.jobsScans[daoKey{
 		clusterName: clusterName,
 		namespace:   namespace,
 	}]
-	sd.jMutex.RUnlock()
 	if scans != nil {
 		return scans
 	} else {
@@ -46,31 +44,39 @@ func (sd *ScansDao) GetJobsScans(clusterName string, namespace string) []model.J
 	}
 }
 
-func (sd *ScansDao) UpdateJobsScans(clusterName string, namespace string, jobsScans []model.JobScan) error {
-	sd.logger.
-		WithField("params", []string{clusterName, namespace}).
-		WithField("rows", len(jobsScans)).
-		Debug("Update jobs scans")
+func (sd *ScansDao) ClearJobsScans(clusterName string, namespace string) {
+	sd.jMutex.Lock()
+	defer sd.jMutex.Unlock()
+	sd.logRequest([]string{clusterName, namespace}, "Clear jobs scans", nil)
 	key := daoKey{
 		clusterName: clusterName,
 		namespace:   namespace,
 	}
+	delete(sd.jobsScans, key)
+}
+
+func (sd *ScansDao) UpdateJobsScans(clusterName string, namespace string, jobsScans []model.JobScan) error {
 	sd.jMutex.Lock()
+	defer sd.jMutex.Unlock()
+	rowsNum := len(jobsScans)
+	sd.logRequest([]string{clusterName, namespace}, "Update jobs scans", &rowsNum)
+	key := daoKey{
+		clusterName: clusterName,
+		namespace:   namespace,
+	}
 	sd.jobsScans[key] = jobsScans
-	sd.jMutex.Unlock()
 	return nil
 }
 
 func (sd *ScansDao) GetServicesScans(clusterName string, namespace string) []model.ServiceScan {
-	sd.logger.
-		WithField("params", []string{clusterName, namespace}).
-		Debug("Get services scans")
 	sd.sMutex.RLock()
-	scans := sd.servicesScans[daoKey{
+	defer sd.sMutex.RUnlock()
+	sd.logRequest([]string{clusterName, namespace}, "Get services scans", nil)
+	key := daoKey{
 		clusterName: clusterName,
 		namespace:   namespace,
-	}]
-	sd.sMutex.RUnlock()
+	}
+	scans := sd.servicesScans[key]
 	if scans != nil {
 		return scans
 	} else {
@@ -78,17 +84,34 @@ func (sd *ScansDao) GetServicesScans(clusterName string, namespace string) []mod
 	}
 }
 
-func (sd *ScansDao) UpdateServicesScans(clusterName string, namespace string, servicesScans []model.ServiceScan) error {
-	sd.logger.
-		WithField("params", []string{clusterName, namespace}).
-		WithField("rows", len(servicesScans)).
-		Debug("Update services scans")
+func (sd *ScansDao) ClearServicesScans(clusterName string, namespace string) {
+	sd.sMutex.Lock()
+	defer sd.sMutex.Unlock()
+	sd.logRequest([]string{clusterName, namespace}, "Clear services scans", nil)
 	key := daoKey{
 		clusterName: clusterName,
 		namespace:   namespace,
 	}
+	delete(sd.servicesScans, key)
+}
+
+func (sd *ScansDao) UpdateServicesScans(clusterName string, namespace string, servicesScans []model.ServiceScan) error {
 	sd.sMutex.Lock()
+	defer sd.sMutex.Unlock()
+	rowsNum := len(servicesScans)
+	sd.logRequest([]string{clusterName, namespace}, "Update services scans", &rowsNum)
+	key := daoKey{
+		clusterName: clusterName,
+		namespace:   namespace,
+	}
 	sd.servicesScans[key] = servicesScans
-	sd.sMutex.Unlock()
 	return nil
+}
+
+func (sd *ScansDao) logRequest(params []string, msg string, rowsNum *int) {
+	entry := sd.logger.WithField("params", params)
+	if rowsNum != nil {
+		entry = entry.WithField("rows", *rowsNum)
+	}
+	entry.Debug(msg)
 }
