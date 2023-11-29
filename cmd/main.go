@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"scan_project/configuration"
-	"scan_project/internal/dao"
+	"scan_project/internal/dal"
 	"scan_project/internal/httpServer"
 	"scan_project/internal/kube"
 	"scan_project/internal/uiServer"
@@ -44,15 +44,15 @@ func main() {
 	logger.Debugf("set log level to %s", lvl)
 
 	// Init DAO
-	postgresDB, err := dao.NewPostgresDB(config, logrus.NewEntry(logger).WithField("app", "postgresql"))
+	postgresDB, err := dal.NewPostgresDB(config, logrus.NewEntry(logger).WithField("app", "postgresql"))
 	if err != nil {
 		logger.
 			WithField("error", err).
 			Error("Failed to init postgres DB")
 		return
 	}
-	scansDao := dao.NewScansDao(logrus.NewEntry(logger).WithField("app", "scans-in-memory"))
-	storage := dao.NewStorage(postgresDB, &scansDao)
+	scansDao := dal.NewScansDao(logrus.NewEntry(logger).WithField("app", "scans-in-memory"))
+	storage := dal.NewStorage(postgresDB, &scansDao)
 
 	// Start KubeScanner
 	kubeScanner := kube.NewKubeScanner(

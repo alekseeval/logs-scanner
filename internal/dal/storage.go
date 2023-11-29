@@ -1,4 +1,4 @@
-package dao
+package dal
 
 import "scan_project/internal/kube"
 
