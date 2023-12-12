@@ -34,6 +34,8 @@ func NewHttpServer(cfg *configuration.Config, storage kube.StorageI, loggerEntry
 	// Scans
 	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces/{namespace}/jobs-scans", httpServer.getJobsScans).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/clusters/{cluster}/namespaces/{namespace}/services-scans", httpServer.getServicesScans).Methods(http.MethodGet)
+	// Swagger
+	r.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", http.FileServer(http.Dir("./swagger/ui/"))))
 	return &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.System.Http.Port),
 		Handler:      r,

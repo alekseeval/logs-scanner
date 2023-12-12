@@ -1,4 +1,4 @@
-package uiServer
+package SwaggerServer
 
 import "net/http"
 
