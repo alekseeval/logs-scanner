@@ -15,7 +15,9 @@ docker run --network host -d --name logs-scanner alekseeval/logs-scanner:X.Y.Z
 ### Конфигурация приложения
 Конфигурационный файл приложения должен называться `config.json` и располагаться по пути `/etc/scanner/config.json`
 
-Порт REST API приложения задается в конфигурации -- `system.http.port`. Интерфейс REST API приложения описан в swagger-спецификации, в файле `/swagger/docs-swagger.yaml`
+### Swagger
+Порт REST API приложения задается в конфигурации -- `system.http.port`. Интерфейс REST API приложения описан в swagger-спецификации, в файле `/swagger/docs-swagger.yaml` 
+и доступен по URI `/swagger/`
 
 
 # Развертывание БД
