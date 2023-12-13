@@ -1,7 +1,7 @@
 package httpServer
 
 import (
-	"k8s.io/apimachinery/pkg/util/json"
+	"encoding/json"
 	"net/http"
 	"scan_project/internal/model"
 )

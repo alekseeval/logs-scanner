@@ -29,7 +29,11 @@ func setResponseHeadersMiddleware(next http.Handler) http.Handler {
 		if r.Method == http.MethodOptions {
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		// TODO: this code ruin swagger page.. And I dnt now why
+		//acceptHeader := r.Header.Get("Accept")
+		//if !strings.Contains(acceptHeader, "text/html") {
+		//	w.Header().Set("Content-Type", "application/json")
+		//}
 		next.ServeHTTP(w, r)
 	})
 }

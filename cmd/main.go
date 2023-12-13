@@ -12,7 +12,6 @@ import (
 	"scan_project/internal/dal"
 	"scan_project/internal/httpServer"
 	"scan_project/internal/kube"
-	"scan_project/internal/uiServer"
 	"syscall"
 	"time"
 )
@@ -25,7 +24,6 @@ const (
 )
 
 func main() {
-
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	config, err := configuration.ReadConfig(pathToConfig)
@@ -70,9 +68,9 @@ func main() {
 		return
 	}()
 	defer func() {
-		KSCtx, ctxCancel := context.WithTimeout(context.Background(), KubeScannerShutdownTimeout)
+		ksCtx, ctxCancel := context.WithTimeout(context.Background(), KubeScannerShutdownTimeout)
 		defer ctxCancel()
-		err = kubeScanner.Shutdown(KSCtx)
+		err = kubeScanner.Shutdown(ksCtx)
 		if err != nil {
 			logger.WithField("error", err).Error("Failed to gracefully shutdown kube-scanner")
 		}
@@ -98,29 +96,6 @@ func main() {
 			logger.
 				WithField("error", err).
 				Error("Failed to shutdown the HTTP Server gracefully")
-		}
-	}(server)
-
-	// Start static UI server
-	staticServer := uiServer.NewUIServer(config, logger.WithField("app", "ui-static-server"))
-	go func() {
-		err := staticServer.ListenAndServe()
-		if errors.Is(err, http.ErrServerClosed) {
-			logger.Info("UI static HTTP server was closed")
-		} else {
-			logger.
-				WithField("error", err).
-				Error("Failed to start the HTTP UI static server")
-		}
-	}()
-	defer func(staticServer *http.Server) {
-		ctx, ctxCancel := context.WithTimeout(context.Background(), HttpServerShutdownTimeout)
-		defer ctxCancel()
-		err := staticServer.Shutdown(ctx)
-		if err != nil {
-			logger.
-				WithField("error", err).
-				Error("Failed to shutdown the UI static HTTP Server gracefully")
 		}
 	}(server)
 
