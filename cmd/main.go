@@ -24,7 +24,6 @@ const (
 )
 
 func main() {
-
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	config, err := configuration.ReadConfig(pathToConfig)
@@ -69,9 +68,9 @@ func main() {
 		return
 	}()
 	defer func() {
-		KSCtx, ctxCancel := context.WithTimeout(context.Background(), KubeScannerShutdownTimeout)
+		ksCtx, ctxCancel := context.WithTimeout(context.Background(), KubeScannerShutdownTimeout)
 		defer ctxCancel()
-		err = kubeScanner.Shutdown(KSCtx)
+		err = kubeScanner.Shutdown(ksCtx)
 		if err != nil {
 			logger.WithField("error", err).Error("Failed to gracefully shutdown kube-scanner")
 		}
